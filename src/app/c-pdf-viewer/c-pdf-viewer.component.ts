@@ -1,0 +1,190 @@
+import { Component, OnInit } from '@angular/core';
+
+@Component({
+  selector: 'app-c-pdf-viewer',
+  templateUrl: './c-pdf-viewer.component.html',
+  styleUrls: ['./c-pdf-viewer.component.css'],
+})
+export class CPdfViewerComponent implements OnInit {
+  pdfSrc = 'https://vadimdez.github.io/ng2-pdf-viewer/assets/pdf-test.pdf';
+  // pdfSrc =
+  //   'https://a207958-cf-pas-live-publicationassembly-execution-qa-use1.s3.amazonaws.com/f8963d8d-8349-4f00-9a52-a8459297d299/CET_BR_D2021-07-26_0053_1.pdf?response-content-disposition=inline&response-content-type=application%2Fpdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAWZWAOWAAVJZ4S32V%2F20220225%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220225T074626Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEEgaCXVzLWVhc3QtMSJHMEUCIQCjOkOeIqMJDii8OfF17BIYyT4LHjujdbOL2AqTL2DbHQIgIaOcOlWrd%2FPKEHAfAXhAj0au2%2BMFFXlJTOImqwT0Z0kqtgIIof%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARABGgw0Njc0ODEzMDkxODUiDNA635QwHFZR5P%2B8HiqKAqeD8HeQqY5Od2Np7t2vw4eW3iE0nTgZaXqnzP2g9RFa8Sx1EzcNjdZBbEmQLV5XRISyR87pXok2pqBUyqTCfeJYBFCZ2DZxY3Q23xLbKUAi0%2F4fzTJGeoj3fAI6lClZd1OGeabnxSAJIp%2FYqX2gkX9W4O%2BJPKj7HYHn5oTkX2PWzurSMbWVIsm9lP6R%2B1qjzH7Y8%2BX0gOzc8L%2BQSvpmDiw%2BUoHZU3o4a44oT3XYZiU88TEB3RpU%2BWGEAt5RPrY8SlBQx8iaRn7rGDz0DYjNNu8jbMrSxE1B2x4AH7PqJWyEALm131SUiJ1EbdVZ8cju4JaI9rsxvyb3nd1z%2B0KrVIPk1RWKSJBBDFa3MOGR4pAGOpoBRw1M1xJ4GbSQatVSokhS2a0ijX8CIs%2F34B5JCpfB9uCVdTtd7igoAQO4F%2F%2FyEULVEtAaL4cuksfVQIW0aqrvv%2Bd8q7l%2BqDkN1%2Fcxz7BOKZrvBtKBkAudDm4fp67UnUSh%2BjENnSVDKQTAK%2FYcaHhGOGNiX47sEwOM8CizzFk1Tp5T%2BptDx%2F41NIQ07bQRunFPAMj1P2u8PpfinQ%3D%3D&X-Amz-Signature=10f0b86f0715e75a41e7dca35db9fa36246219e9d12b07585adea0dfd23bd266';
+
+  zoom = 0.75;
+  color = 'rgba(255, 255, 0, 1)';
+  date = 'Date';
+  annotations: any[] = [];
+  username = 'Suprabh';
+  monthNames = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  replyText = '';
+  constructor() {}
+
+  ngOnInit(): void {}
+
+  highlightSelection() {
+    const userSelection: any = window.getSelection();
+    //Attempting to highlight multiple selections (for multiple nodes only + Currently removes the formatting)
+    for (let i = 0; i < userSelection.rangeCount; i++) {
+      //Copy the selection onto a new element and highlight it
+      const node = this.highlightRange(
+        userSelection.getRangeAt(i) /*.toString()*/
+      );
+      // Make the range into a variable so we can replace it
+      const range = userSelection.getRangeAt(i);
+      //Delete the current selection
+      range.deleteContents();
+      //Insert the copy
+      range.insertNode(node);
+    }
+
+    //highlights 1 selection (for individual nodes only + Need to uncomment on the bootom)
+    //highlightRange(userSelection.getRangeAt(0));
+
+    //Save the text to a string to be used if yoiu want to
+    /*var string1 = (userSelection.getRangeAt(0));
+              alert(string1);*/
+  }
+
+  highlightRange(range: any) {
+    //Create the new Node
+    const newNode = document.createElement('span');
+
+    // Make it highlight
+    newNode.setAttribute('style', `background-color: ${this.color};`);
+
+    //Make it "Clickable"
+    // newNode.onclick = () => {
+    //   if (confirm('do you want to delete it?')) {
+    //     this.deletenode(newNode);
+    //   } else {
+    //     alert(range);
+    //   }
+    // };
+
+    //Add Text for replacement (for multiple nodes only)
+    //newNode.innerHTML += range;
+    newNode.appendChild(range.cloneContents());
+
+    //Apply Node around selection (used for individual nodes only)
+    //range.surroundContents(newNode);
+    const nodeData = {
+      node: newNode,
+      metaData: {
+        date: this.getDate(),
+        replies: [],
+        showReplyInput: false,
+      },
+    };
+    this.annotations.push(nodeData);
+    return newNode;
+  }
+
+  getDate() {
+    const date = new Date();
+    const month = this.monthNames[date.getMonth()];
+    return `${month} ${date.getDate()}, ${date.getFullYear()}`;
+  }
+
+  deletenode(node: any) {
+    const contents = document.createTextNode(node.innerText);
+    node.parentNode.replaceChild(contents, node);
+  }
+
+  removeNode(index: number) {
+    this.deletenode(this.annotations[index].node);
+    this.annotations.splice(index, 1);
+  }
+
+  replyBtn(index: number) {
+    // add the text area with button and cancel action.
+    this.annotations[index].metaData['showReplyInput'] = true;
+  }
+
+  cancelReply(index: number) {
+    this.annotations[index].metaData['showReplyInput'] = false;
+    this.replyText = '';
+  }
+
+  addReply(index: number) {
+    this.annotations[index].metaData['showReplyInput'] = false;
+    const replies = this.annotations[index].metaData['replies'];
+    const message = this.replyText;
+
+    if (replies && Array.isArray(replies) && replies.length > 0) {
+      this.annotations[index].metaData['replies'].push({
+        message,
+        author: this.username,
+        repliedOn: this.getDate(),
+        isEditOpen: false,
+        cloneMessage: message,
+      });
+    } else {
+      this.annotations[index].metaData['replies'] = [
+        {
+          message,
+          author: this.username,
+          repliedOn: this.getDate(),
+          isEditOpen: false,
+          cloneMessage: message,
+        },
+      ];
+    }
+    this.replyText = '';
+  }
+  handleReplyChange(value: string) {
+    this.replyText = value;
+  }
+
+  editReply(replyIndex: number, annotationIndex: number) {
+    console.log(replyIndex);
+    console.log(annotationIndex);
+    this.annotations[annotationIndex].metaData.replies[replyIndex].isEditOpen =
+      true;
+  }
+
+  deleteReply(replyIndex: number, annotationIndex: number) {
+    this.annotations[annotationIndex].metaData.replies.splice(replyIndex, 1);
+  }
+
+  cancelReplyEdit(replyIndex: number, annotationIndex: number) {
+    this.annotations[annotationIndex].metaData.replies[replyIndex].isEditOpen =
+      false;
+
+    this.annotations[annotationIndex].metaData.replies[
+      replyIndex
+    ].cloneMessage =
+      this.annotations[annotationIndex].metaData.replies[replyIndex].message;
+  }
+
+  updateReply(replyIndex: number, annotationIndex: number) {
+    this.annotations[annotationIndex].metaData.replies[replyIndex].isEditOpen =
+      false;
+    this.annotations[annotationIndex].metaData.replies[replyIndex].message =
+      this.annotations[annotationIndex].metaData.replies[
+        replyIndex
+      ].cloneMessage;
+  }
+
+  handleReplyEdit(
+    changeValue: string,
+    replyIndex: number,
+    annotationIndex: number
+  ) {
+    this.annotations[annotationIndex].metaData.replies[
+      replyIndex
+    ].cloneMessage = changeValue;
+  }
+}

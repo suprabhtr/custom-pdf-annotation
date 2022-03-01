@@ -1,0 +1,128 @@
+.c-pdf-content-viewer {
+}
+
+.c-pdf-content-container {
+  display: grid;
+  grid-template-columns: 70fr 20fr;
+  grid-gap: 10px;
+}
+
+.c-pdf-annotations-siderbar {
+  margin-left: 1%;
+  border: 1px solid gray;
+  border-radius: 6px;
+  height: 80vh;
+  padding: 5px;
+}
+
+.c-pdf-annotation-tools {
+  font-size: 1.2rem;
+  margin-bottom: 5px;
+}
+
+.c-pdf-highlight-btn {
+  padding: 6px 10px;
+  background-color: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-right: 10px;
+  border-color: grey;
+}
+
+.c-pdf-color-picker-input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border-color: grey;
+}
+
+.c-pdf-annotated-card {
+  margin: 10px 5px;
+  padding: 5px;
+  border: 1px solid grey;
+  border-radius: 5px;
+  box-shadow: 2px 5px #888888;
+}
+
+.c-pdf-annotated-card-user {
+  display: flex;
+  justify-content: space-between;
+}
+
+.c-pdf-annotated-card-body {
+  padding: 5px 0px;
+}
+
+.c-pdf-annotated-card-body-blockquote {
+  padding: 5px;
+  background: #eee;
+  border-radius: 5px;
+  margin: 5px;
+}
+
+.c-pdf-annotation-reply-input-container {
+  margin: 10px 0px 10px 30px;
+}
+.c-pdf-reply-container {
+  border: 1px solid green;
+  border-radius: 4px;
+  width: 90%;
+  margin: 15px;
+  padding: 10px;
+}
+
+.c-pdf-author-reply {
+  display: flex;
+  justify-content: space-between;
+}
+
+.c-annotation-reply-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.c-pdf-annotated-card-delete {
+  background-color: transparent;
+  border-radius: 5px;
+  border: 1px solid grey;
+  color: red;
+}
+.c-pdf-annotated-card-reply {
+  background-color: transparent;
+  border-radius: 5px;
+  border: 1px solid grey;
+  color: green;
+  margin-left: 5px;
+}
+
+#control {
+  cursor: pointer;
+  position: absolute;
+  width: 180px;
+  height: 40px;
+  border-radius: 2px;
+  /* background-color: black; */
+}
+#control::before {
+  position: absolute;
+  content: "";
+  border-top: 10px solid black;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  left: 60px;
+  top: 30px;
+}
+.c-pdf-annotate-btn {
+  margin-right: 5px;
+  padding: 5px;
+  background-color: transparent;
+  border-radius: 6px;
+  color: blue;
+  cursor: pointer;
+}
+.c-pdf-highlightt-btn {
+  padding: 5px;
+  background-color: transparent;
+  border-radius: 6px;
+  color: red;
+  cursor: pointer;
+}

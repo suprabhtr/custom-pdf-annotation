@@ -1,0 +1,147 @@
+<div class="c-pdf-content-container">
+  <div class="c-pdf-content-viewer">
+    Render PDF here.
+
+    <pdf-viewer
+      [src]="pdfSrc"
+      [render-text]="true"
+      [original-size]="false"
+      style="height: 80vh"
+      [zoom]="zoom"
+    ></pdf-viewer>
+  </div>
+
+  <div class="c-pdf-annotations-siderbar">
+    <div class="c-pdf-annotation-tools">Annotation Tools</div>
+    <button class="c-pdf-highlight-btn" (click)="highlightSelection()">
+      Highlight
+    </button>
+    <input
+      class="c-pdf-color-picker-input"
+      [value]="color"
+      [style.background]="color"
+      [cpAlphaChannel]="'always'"
+      [cpOutputFormat]="'rgba'"
+      [cpOKButton]="true"
+      [cpSaveClickOutside]="false"
+      [cpOKButtonClass]="'btn btn-primary btn-xs'"
+      [cpPresetColors]="[
+        '#fff',
+        '#000',
+        '#2889e9',
+        '#e920e9',
+        'rgba(255, 255, 0, 0.5)',
+        'rgb(236,64,64)',
+        'rgba(37,139,240,0.2)',
+        'rgba(65,205,0,0.2)',
+        'rgba(0,205,172,0.2)',
+        'rgba(105,0,205,0.2)',
+        'rgba(205,0,50,0.2)',
+        'rgba(205,81,0,0.2)'
+      ]"
+      [(colorPicker)]="color"
+    />
+    <hr />
+    <div *ngIf="annotations.length > 0; else noAnnotation">
+      <div
+        class="c-pdf-annotated-card"
+        *ngFor="let annotation of annotations; let index = index"
+      >
+        <div class="c-pdf-annotated-card-user">
+          <div>
+            <strong
+              ><i>{{ username }} </i></strong
+            >
+          </div>
+          <div>{{ annotation.metaData.date }}</div>
+        </div>
+        <div class="c-pdf-annotated-card-body">
+          <blockquote class="c-pdf-annotated-card-body-blockquote">
+            <i>{{ annotation.node.innerText }}</i>
+          </blockquote>
+        </div>
+        <div
+          *ngFor="
+            let reply of annotation.metaData.replies;
+            let replyIndex = index
+          "
+          class="c-pdf-reply-container"
+        >
+          <div class="c-pdf-author-reply">
+            <div>
+              <strong
+                ><i>{{ reply.author }}</i></strong
+              >
+            </div>
+            <div>{{ reply.repliedOn }}</div>
+          </div>
+
+          <div>
+            <div *ngIf="!reply.isEditOpen; else editReplyContainer">
+              <blockquote class="c-pdf-annotated-card-body-blockquote">
+                {{ reply.message }}
+              </blockquote>
+            </div>
+
+            <ng-template #editReplyContainer
+              ><div>
+                <textarea
+                  rows="3"
+                  style="width: 98%"
+                  [ngModel]="reply.cloneMessage"
+                  (ngModelChange)="handleReplyEdit($event, replyIndex, index)"
+                ></textarea>
+                <div>
+                  <button (click)="cancelReplyEdit(replyIndex, index)">
+                    Cancel</button
+                  ><button (click)="updateReply(replyIndex, index)">
+                    Update Reply
+                  </button>
+                </div>
+              </div></ng-template
+            >
+
+            <button (click)="deleteReply(replyIndex, index)">Delete</button>
+            <button
+              *ngIf="!reply.isEditOpen"
+              (click)="editReply(replyIndex, index)"
+            >
+              Edit
+            </button>
+          </div>
+        </div>
+        <div
+          *ngIf="annotation.metaData.showReplyInput"
+          class="c-pdf-annotation-reply-input-container"
+        >
+          <textarea
+            rows="3"
+            style="width: 98%"
+            [ngModel]="replyText"
+            (ngModelChange)="handleReplyChange($event)"
+          ></textarea>
+          <div class="c-annotation-reply-actions">
+            <button (click)="cancelReply(index)">Cancel</button>
+            <button (click)="addReply(index)">Add reply</button>
+          </div>
+        </div>
+        <button class="c-pdf-annotated-card-delete" (click)="removeNode(index)">
+          Delete
+        </button>
+        <button class="c-pdf-annotated-card-reply" (click)="replyBtn(index)">
+          Reply
+        </button>
+      </div>
+    </div>
+    <ng-template #noAnnotation><div>No annotations found...</div></ng-template>
+  </div>
+  <!--
+    below template is for showing up the controls for Text Annotate, Highlight and other annotations
+  -->
+  <template>
+    <span id="control"
+      ><button class="c-pdf-annotate-btn">Annotate</button
+      ><button class="c-pdf-highlightt-btn">Highlight</button>
+    </span>
+  </template>
+</div>
