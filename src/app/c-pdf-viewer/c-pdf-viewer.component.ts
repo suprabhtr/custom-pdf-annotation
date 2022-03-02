@@ -1,6 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 interface IAnnotation {
   node: HTMLSpanElement;
+  targetNodeParentToChild: number[];
+  offset: {
+    startOffset: number;
+    endOffset: number;
+  };
   metaData: {
     date: string;
     showReplyInput: boolean;
@@ -46,26 +51,43 @@ export class CPdfViewerComponent implements OnInit {
   replyText = '';
   constructor() {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    if (JSON.parse(localStorage.getItem('annotations')!)) {
+      setTimeout(() => {
+        this.annotations = JSON.parse(localStorage.getItem('annotations')!);
+        this.annotations.forEach((annotation: IAnnotation, index: number) => {
+          const node = this.getNode(annotation.targetNodeParentToChild);
+          annotation.node = node;
+          annotation.node.innerText = annotation.node.innerText.slice(
+            annotation.offset.startOffset,
+            annotation.offset.endOffset
+          );
+        });
+      }, 1000);
+    }
+  }
+
+  getNode(nodePath: number[]) {
+    let parent: any = document.querySelector('body');
+
+    nodePath.forEach((item: number) => {
+      parent = parent?.children[item];
+    });
+    return parent;
+  }
 
   highlightSelection() {
     const userSelection: any = window.getSelection();
     //Attempting to highlight multiple selections (for multiple nodes only + Currently removes the formatting)
-    for (let i = 0; i < userSelection.rangeCount; i++) {
-      //Copy the selection onto a new element and highlight it
-      const node = this.highlightRange(
-        userSelection.getRangeAt(i) /*.toString()*/
-      );
-      // Make the range into a variable so we can replace it
-      const range = userSelection.getRangeAt(i);
-      //Delete the current selection
-      range.deleteContents();
-      //Insert the copy
-      range.insertNode(node);
-    }
+    const range = userSelection.getRangeAt(0);
+    const targetNode = userSelection.anchorNode.parentElement;
+    const node = this.highlightRange(range, targetNode);
+
+    range.deleteContents();
+    range.insertNode(node);
   }
 
-  highlightRange(range: any) {
+  highlightRange(range: any, targetNode: any) {
     //Create the new Node
     const newNode = document.createElement('span');
 
@@ -78,8 +100,11 @@ export class CPdfViewerComponent implements OnInit {
 
     //Apply Node around selection (used for individual nodes only)
     //range.surroundContents(newNode);
+    const parentToChild = this.getPath(targetNode);
     const nodeData = {
+      targetNodeParentToChild: parentToChild,
       node: newNode,
+      offset: { startOffset: range.startOffset, endOffset: range.endOffset },
       metaData: {
         date: this.getDate(),
         replies: [],
@@ -87,7 +112,12 @@ export class CPdfViewerComponent implements OnInit {
       },
     };
     this.annotations.push(nodeData);
+    this.saveToStorage();
     return newNode;
+  }
+
+  saveToStorage() {
+    localStorage.setItem('annotations', JSON.stringify(this.annotations));
   }
 
   getDate() {
@@ -141,6 +171,7 @@ export class CPdfViewerComponent implements OnInit {
       ];
     }
     this.replyText = '';
+    this.saveToStorage();
   }
   handleReplyChange(value: string) {
     this.replyText = value;
@@ -184,5 +215,41 @@ export class CPdfViewerComponent implements OnInit {
     this.annotations[annotationIndex].metaData.replies[
       replyIndex
     ].cloneMessage = changeValue;
+  }
+
+  getPath(currentNode: any) {
+    const root = document.querySelector('body');
+
+    // Getting the node element
+
+    // Function to getPath
+    function getPath(root: any, node: any) {
+      // receiving a root element and a node element
+      const path = []; // To save the path of the node element that need to get to the root element
+
+      // Starting to get the path from bottom (nodeA) to top (rootA)
+      while (node !== root) {
+        // Because we are going to start from the node element to the top then we need to know wich is the parent element of the node
+        const parent = node.parentElement; // getting the parent element of the node element
+
+        const childrens = Array.from(parent.children); // Getting the childrens of the actual parent node in an Array (not in a HTMLCollection)
+
+        const nodeIndex = childrens.indexOf(node); // Check if the actual node is in the childrens array, if yes - then get the position where the node element was founded
+
+        path.push(nodeIndex); // Saving the position that the node element was founded into the path array
+
+        node = parent; // Now we're moving up so now the current node will be the parent node...and the process will be repeated
+      }
+
+      return path;
+    }
+
+    // Executing the function
+    const path = getPath(root, currentNode);
+
+    // Printing final path in the browser
+    console.log('path ---->', path);
+    console.log(`Reversing the path from top to bottom - ${path.reverse()}`);
+    return path;
   }
 }
