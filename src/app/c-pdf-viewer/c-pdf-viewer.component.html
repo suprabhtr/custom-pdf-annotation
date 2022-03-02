@@ -91,7 +91,7 @@
                   [ngModel]="reply.cloneMessage"
                   (ngModelChange)="handleReplyEdit($event, replyIndex, index)"
                 ></textarea>
-                <div>
+                <div class="c-annotation-reply-actions">
                   <button (click)="cancelReplyEdit(replyIndex, index)">
                     Cancel</button
                   ><button (click)="updateReply(replyIndex, index)">
@@ -100,14 +100,15 @@
                 </div>
               </div></ng-template
             >
-
-            <button (click)="deleteReply(replyIndex, index)">Delete</button>
-            <button
-              *ngIf="!reply.isEditOpen"
-              (click)="editReply(replyIndex, index)"
-            >
-              Edit
-            </button>
+            <div class="c-annotation-reply-actions">
+              <button (click)="deleteReply(replyIndex, index)">Delete</button>
+              <button
+                *ngIf="!reply.isEditOpen"
+                (click)="editReply(replyIndex, index)"
+              >
+                Edit
+              </button>
+            </div>
           </div>
         </div>
         <div

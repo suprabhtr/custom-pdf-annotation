@@ -1,4 +1,18 @@
 import { Component, OnInit } from '@angular/core';
+interface IAnnotation {
+  node: HTMLSpanElement;
+  metaData: {
+    date: string;
+    showReplyInput: boolean;
+    replies: {
+      message: string;
+      author: string;
+      repliedOn: string;
+      isEditOpen: boolean;
+      cloneMessage: string;
+    }[];
+  };
+}
 
 @Component({
   selector: 'app-c-pdf-viewer',
@@ -13,7 +27,7 @@ export class CPdfViewerComponent implements OnInit {
   zoom = 0.75;
   color = 'rgba(255, 255, 0, 1)';
   date = 'Date';
-  annotations: any[] = [];
+  annotations: IAnnotation[] = [];
   username = 'Suprabh';
   monthNames = [
     'January',
@@ -49,13 +63,6 @@ export class CPdfViewerComponent implements OnInit {
       //Insert the copy
       range.insertNode(node);
     }
-
-    //highlights 1 selection (for individual nodes only + Need to uncomment on the bootom)
-    //highlightRange(userSelection.getRangeAt(0));
-
-    //Save the text to a string to be used if yoiu want to
-    /*var string1 = (userSelection.getRangeAt(0));
-              alert(string1);*/
   }
 
   highlightRange(range: any) {
@@ -64,15 +71,6 @@ export class CPdfViewerComponent implements OnInit {
 
     // Make it highlight
     newNode.setAttribute('style', `background-color: ${this.color};`);
-
-    //Make it "Clickable"
-    // newNode.onclick = () => {
-    //   if (confirm('do you want to delete it?')) {
-    //     this.deletenode(newNode);
-    //   } else {
-    //     alert(range);
-    //   }
-    // };
 
     //Add Text for replacement (for multiple nodes only)
     //newNode.innerHTML += range;
