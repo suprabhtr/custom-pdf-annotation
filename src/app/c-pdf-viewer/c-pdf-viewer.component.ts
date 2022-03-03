@@ -112,12 +112,16 @@ export class CPdfViewerComponent implements OnInit {
       },
     };
     this.annotations.push(nodeData);
-    this.saveToStorage();
     return newNode;
   }
 
   saveToStorage() {
     localStorage.setItem('annotations', JSON.stringify(this.annotations));
+  }
+
+  clearStorage() {
+    this.annotations = [];
+    localStorage.removeItem('annotations');
   }
 
   getDate() {
@@ -171,7 +175,6 @@ export class CPdfViewerComponent implements OnInit {
       ];
     }
     this.replyText = '';
-    this.saveToStorage();
   }
   handleReplyChange(value: string) {
     this.replyText = value;
@@ -251,5 +254,12 @@ export class CPdfViewerComponent implements OnInit {
     console.log('path ---->', path);
     console.log(`Reversing the path from top to bottom - ${path.reverse()}`);
     return path;
+  }
+
+  scrollIntoView(annotationId: number) {
+    this.annotations[annotationId].node.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
   }
 }

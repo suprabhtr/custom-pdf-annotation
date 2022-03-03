@@ -41,11 +41,18 @@
       ]"
       [(colorPicker)]="color"
     />
+    <button class="c-pdf-highlight-btn" (click)="saveToStorage()">
+      Save Annotations
+    </button>
+    <button class="c-pdf-highlight-btn" (click)="clearStorage()">
+      Clear Annotations
+    </button>
     <hr />
     <div *ngIf="annotations.length > 0; else noAnnotation">
       <div
         class="c-pdf-annotated-card"
         *ngFor="let annotation of annotations; let index = index"
+        (click)="scrollIntoView(index)"
       >
         <div class="c-pdf-annotated-card-user">
           <div>
