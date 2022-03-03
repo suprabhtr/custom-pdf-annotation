@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 interface IAnnotation {
   node: HTMLSpanElement;
   targetNodeParentToChild: number[];
+  backgroundColor: string;
   offset: {
     startOffset: number;
     endOffset: number;
@@ -62,6 +63,7 @@ export class CPdfViewerComponent implements OnInit {
             annotation.offset.startOffset,
             annotation.offset.endOffset
           );
+          annotation.node.style.background = annotation.backgroundColor;
         });
       }, 1000);
     }
@@ -105,6 +107,7 @@ export class CPdfViewerComponent implements OnInit {
       targetNodeParentToChild: parentToChild,
       node: newNode,
       offset: { startOffset: range.startOffset, endOffset: range.endOffset },
+      backgroundColor: this.color,
       metaData: {
         date: this.getDate(),
         replies: [],
