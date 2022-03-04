@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
+import { AnnotationType } from '../annotationUtil';
 interface IAnnotation {
   node: HTMLSpanElement;
   metaData: {
+    type: string;
     date: string;
     showReplyInput: boolean;
     replies: {
@@ -81,6 +83,7 @@ export class CPdfViewerComponent implements OnInit {
     const nodeData = {
       node: newNode,
       metaData: {
+        type: AnnotationType.highlight,
         date: this.getDate(),
         replies: [],
         showReplyInput: false,
@@ -184,5 +187,61 @@ export class CPdfViewerComponent implements OnInit {
     this.annotations[annotationIndex].metaData.replies[
       replyIndex
     ].cloneMessage = changeValue;
+  }
+
+  annotateSelection(annotationType:number){
+    const userSelection: any = window.getSelection();
+
+    for (let i = 0; i < userSelection.rangeCount; i++) {
+      //Copy the selection onto a new element and highlight it
+      const node = this.annotateRange(
+        userSelection.getRangeAt(i), /*.toString()*/
+        annotationType
+      );
+      // Make the range into a variable so we can replace it
+      const range = userSelection.getRangeAt(i);
+      //Delete the current selection
+      range.deleteContents();
+      //Insert the copy
+      range.insertNode(node);
+    }
+
+  }
+
+  annotateRange(range:Range, type:number){
+    const newNode = document.createElement('span');
+    let showComment:boolean = false;
+    let annotationType:string="";
+
+    if(type==1){
+      annotationType=AnnotationType.underline;
+      newNode.setAttribute('style', `border-bottom: 0.2rem solid black !important;`);
+    }
+    else if(type==2){
+      annotationType=AnnotationType.strikeThrough;
+      newNode.setAttribute('style', `text-decoration: line-through !important;
+      color: black;
+      z-index: 1000;
+      text-decoration-style: double;`);
+    }
+    else if(type==3){
+      annotationType=AnnotationType.text;
+      showComment=true;
+      newNode.setAttribute('style', `background-color: ${this.color};`)
+    }
+
+    newNode.appendChild(range.cloneContents());
+
+    const nodeData = {
+      node: newNode,
+      metaData: {
+        type: annotationType,
+        date: this.getDate(),
+        replies: [],
+        showReplyInput: showComment,
+      },
+    };
+    this.annotations.push(nodeData);
+    return newNode;
   }
 }

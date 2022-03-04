@@ -16,6 +16,15 @@
     <button class="c-pdf-highlight-btn" (click)="highlightSelection()">
       Highlight
     </button>
+    <button class="c-pdf-highlight-btn" (click)="annotateSelection(1)">
+      Underline
+    </button>
+    <button class="c-pdf-highlight-btn" (click)="annotateSelection(2)">
+      Strikeout
+    </button>
+    <button class="c-pdf-highlight-btn" (click)="annotateSelection(3)">
+      Annotate
+    </button>
     <input
       class="c-pdf-color-picker-input"
       [value]="color"
@@ -52,6 +61,7 @@
             <strong
               ><i>{{ username }} </i></strong
             >
+            <span class="c-pdf-annotated-badge"> {{annotation.metaData.type}}</span>
           </div>
           <div>{{ annotation.metaData.date }}</div>
         </div>
@@ -143,6 +153,7 @@
     <span id="control"
       ><button class="c-pdf-annotate-btn">Annotate</button
       ><button class="c-pdf-highlightt-btn">Highlight</button>
+      <button class="c-pdf-highlightt-btn">Add Text</button>
     </span>
   </template>
 </div>

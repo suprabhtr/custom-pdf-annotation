@@ -127,3 +127,10 @@
   color: red;
   cursor: pointer;
 }
+.c-pdf-annotated-badge{
+  background-color: rgb(83, 137, 209);
+  color: white;
+  padding: 2% 8%;
+  border-radius: 30rem;
+  font-size:smaller;
+}
