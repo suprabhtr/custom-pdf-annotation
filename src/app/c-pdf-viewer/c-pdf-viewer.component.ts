@@ -52,7 +52,9 @@ export class CPdfViewerComponent implements OnInit {
     'December',
   ];
   replyText = '';
-  constructor() {}
+  constructor() {
+
+  }
 
   ngOnInit(): void {
     if (JSON.parse(localStorage.getItem('annotations')!)) {
@@ -65,7 +67,17 @@ export class CPdfViewerComponent implements OnInit {
             annotation.offset!.startOffset,
             annotation.offset!.endOffset
           );
-          annotation.node.style.background = annotation.backgroundColor!;
+          if(annotation.metaData.type===AnnotationType.highlight || annotation.metaData.type===AnnotationType.text){
+            annotation.node.style.background = annotation.backgroundColor!;
+          }
+          else if(annotation.metaData.type===AnnotationType.underline){
+            annotation.node.style.borderBottom ='0.2rem solid black';
+          }
+          else{
+            annotation.node.style.borderBottom ='0.2rem solid black';
+            annotation.node.style.transform = 'translateY(-50%)';
+          }
+
         });
       }, 1000);
     }
@@ -228,24 +240,16 @@ export class CPdfViewerComponent implements OnInit {
 
   annotateSelection(annotationType:number){
     const userSelection: any = window.getSelection();
+    const range = userSelection.getRangeAt(0);
+    const targetNode = userSelection.anchorNode.parentElement;
+    const node = this.annotateRange(range, targetNode, annotationType);
 
-    for (let i = 0; i < userSelection.rangeCount; i++) {
-      //Copy the selection onto a new element and highlight it
-      const node = this.annotateRange(
-        userSelection.getRangeAt(i), /*.toString()*/
-        annotationType
-      );
-      // Make the range into a variable so we can replace it
-      const range = userSelection.getRangeAt(i);
-      //Delete the current selection
-      range.deleteContents();
-      //Insert the copy
-      range.insertNode(node);
-    }
+    range.deleteContents();
+    range.insertNode(node);
 
   }
 
-  annotateRange(range:Range, type:number){
+  annotateRange(range:Range, targetNode:any ,type:number){
     const newNode = document.createElement('span');
     let showComment:boolean = false;
     let annotationType:string="";
@@ -258,7 +262,6 @@ export class CPdfViewerComponent implements OnInit {
       annotationType=AnnotationType.strikeThrough;
       newNode.setAttribute('style', `text-decoration: line-through !important;
       color: black;
-      z-index: 1000;
       text-decoration-style: double;`);
     }
     else if(type==3){
@@ -268,9 +271,12 @@ export class CPdfViewerComponent implements OnInit {
     }
 
     newNode.appendChild(range.cloneContents());
-
+    const parentToChild = this.getPath(targetNode);
     const nodeData = {
+      targetNodeParentToChild: parentToChild,
+      offset: { startOffset: range.startOffset, endOffset: range.endOffset },
       node: newNode,
+      backgroundColor: this.color,
       metaData: {
         type: annotationType,
         date: this.getDate(),
