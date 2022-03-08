@@ -52,13 +52,12 @@ export class CPdfViewerComponent implements OnInit {
     'December',
   ];
   replyText = '';
-  constructor() {
-
-  }
+  constructor() {}
 
   ngOnInit(): void {
     if (JSON.parse(localStorage.getItem('annotations')!)) {
       setTimeout(() => {
+        this.modifyTextLayerStyles();
         this.annotations = JSON.parse(localStorage.getItem('annotations')!);
         this.annotations.forEach((annotation: IAnnotation, index: number) => {
           const node = this.getNode(annotation.targetNodeParentToChild!);
@@ -67,19 +66,27 @@ export class CPdfViewerComponent implements OnInit {
             annotation.offset!.startOffset,
             annotation.offset!.endOffset
           );
-          if(annotation.metaData.type===AnnotationType.highlight || annotation.metaData.type===AnnotationType.text){
+          if (
+            annotation.metaData.type === AnnotationType.highlight ||
+            annotation.metaData.type === AnnotationType.text
+          ) {
             annotation.node.style.background = annotation.backgroundColor!;
-          }
-          else if(annotation.metaData.type===AnnotationType.underline){
-            annotation.node.style.borderBottom ='0.2rem solid black';
-          }
-          else{
-            annotation.node.style.borderBottom ='0.2rem solid black';
+          } else if (annotation.metaData.type === AnnotationType.underline) {
+            annotation.node.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
+          } else {
+            annotation.node.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
             annotation.node.style.transform = 'translateY(-50%)';
           }
-
         });
       }, 1000);
+    }
+  }
+
+  modifyTextLayerStyles() {
+    let textLayers: any = document.getElementsByClassName('textLayer');
+    textLayers = Array.prototype.slice.call(textLayers);
+    for (let layer of textLayers) {
+      layer.style.opacity = 0.5;
     }
   }
 
@@ -238,7 +245,7 @@ export class CPdfViewerComponent implements OnInit {
     ].cloneMessage = changeValue;
   }
 
-  annotateSelection(annotationType:number){
+  annotateSelection(annotationType: number) {
     const userSelection: any = window.getSelection();
     const range = userSelection.getRangeAt(0);
     const targetNode = userSelection.anchorNode.parentElement;
@@ -246,28 +253,31 @@ export class CPdfViewerComponent implements OnInit {
 
     range.deleteContents();
     range.insertNode(node);
-
   }
 
-  annotateRange(range:Range, targetNode:any ,type:number){
+  annotateRange(range: Range, targetNode: any, type: number) {
     const newNode = document.createElement('span');
-    let showComment:boolean = false;
-    let annotationType:string="";
+    let showComment: boolean = false;
+    let annotationType: string = '';
 
-    if(type==1){
-      annotationType=AnnotationType.underline;
-      newNode.setAttribute('style', `border-bottom: 0.2rem solid black !important;`);
-    }
-    else if(type==2){
-      annotationType=AnnotationType.strikeThrough;
-      newNode.setAttribute('style', `text-decoration: line-through !important;
-      color: black;
-      text-decoration-style: double;`);
-    }
-    else if(type==3){
-      annotationType=AnnotationType.text;
-      showComment=true;
-      newNode.setAttribute('style', `background-color: ${this.color};`)
+    if (type == 1) {
+      annotationType = AnnotationType.underline;
+      newNode.setAttribute(
+        'style',
+        `border-bottom: 0.2rem solid ${this.color} !important;`
+      );
+    } else if (type == 2) {
+      annotationType = AnnotationType.strikeThrough;
+      newNode.setAttribute(
+        'style',
+        `text-decoration: line-through !important;
+      color: ${this.color};
+      text-decoration-style: double;`
+      );
+    } else if (type == 3) {
+      annotationType = AnnotationType.text;
+      showComment = true;
+      newNode.setAttribute('style', `background-color: ${this.color};`);
     }
 
     newNode.appendChild(range.cloneContents());
