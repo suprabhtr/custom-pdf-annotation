@@ -151,8 +151,20 @@ export class CPdfViewerComponent implements OnInit {
 
   getDate() {
     const date = new Date();
+    const time = this.formatAMPM(date);
     const month = this.monthNames[date.getMonth()];
-    return `${month} ${date.getDate()}, ${date.getFullYear()}`;
+    return `${time} ${month} ${date.getDate()}, ${date.getFullYear()}`;
+  }
+
+  formatAMPM(date: any) {
+    let hours = date.getHours();
+    let minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    var strTime = hours + ':' + minutes + ' ' + ampm;
+    return strTime;
   }
 
   deletenode(node: any) {
