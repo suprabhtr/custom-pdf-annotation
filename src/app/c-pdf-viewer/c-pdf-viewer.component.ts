@@ -30,8 +30,10 @@ interface IAnnotation {
 export class CPdfViewerComponent implements OnInit {
   pdfSrc = 'https://vadimdez.github.io/ng2-pdf-viewer/assets/pdf-test.pdf';
   // pdfSrc =
-  //   'https://a207958-cf-pas-live-publicationassembly-execution-qa-use1.s3.amazonaws.com/f8963d8d-8349-4f00-9a52-a8459297d299/CET_BR_D2021-07-26_0053_1.pdf?response-content-disposition=inline&response-content-type=application%2Fpdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAWZWAOWAAVJZ4S32V%2F20220225%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220225T074626Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEEgaCXVzLWVhc3QtMSJHMEUCIQCjOkOeIqMJDii8OfF17BIYyT4LHjujdbOL2AqTL2DbHQIgIaOcOlWrd%2FPKEHAfAXhAj0au2%2BMFFXlJTOImqwT0Z0kqtgIIof%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARABGgw0Njc0ODEzMDkxODUiDNA635QwHFZR5P%2B8HiqKAqeD8HeQqY5Od2Np7t2vw4eW3iE0nTgZaXqnzP2g9RFa8Sx1EzcNjdZBbEmQLV5XRISyR87pXok2pqBUyqTCfeJYBFCZ2DZxY3Q23xLbKUAi0%2F4fzTJGeoj3fAI6lClZd1OGeabnxSAJIp%2FYqX2gkX9W4O%2BJPKj7HYHn5oTkX2PWzurSMbWVIsm9lP6R%2B1qjzH7Y8%2BX0gOzc8L%2BQSvpmDiw%2BUoHZU3o4a44oT3XYZiU88TEB3RpU%2BWGEAt5RPrY8SlBQx8iaRn7rGDz0DYjNNu8jbMrSxE1B2x4AH7PqJWyEALm131SUiJ1EbdVZ8cju4JaI9rsxvyb3nd1z%2B0KrVIPk1RWKSJBBDFa3MOGR4pAGOpoBRw1M1xJ4GbSQatVSokhS2a0ijX8CIs%2F34B5JCpfB9uCVdTtd7igoAQO4F%2F%2FyEULVEtAaL4cuksfVQIW0aqrvv%2Bd8q7l%2BqDkN1%2Fcxz7BOKZrvBtKBkAudDm4fp67UnUSh%2BjENnSVDKQTAK%2FYcaHhGOGNiX47sEwOM8CizzFk1Tp5T%2BptDx%2F41NIQ07bQRunFPAMj1P2u8PpfinQ%3D%3D&X-Amz-Signature=10f0b86f0715e75a41e7dca35db9fa36246219e9d12b07585adea0dfd23bd266';
+  //   'https://user.iiasa.ac.at/~gruebler/Lectures/Leoben00-01/ch2%20from%20book.pdf';
 
+  // pdfSrc =
+  //   'https://a207958-cf-pas-live-publicationassembly-execution-qa-use1.s3.amazonaws.com/f8963d8d-8349-4f00-9a52-a8459297d299/CET_BR_D2021-07-26_0053_1.pdf?response-content-disposition=inline&response-content-type=application%2Fpdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAWZWAOWAASTP34HUW%2F20220308%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220308T111652Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEFQaCXVzLWVhc3QtMSJGMEQCIDdGvh7vnAjV%2FoePFlxRW7JJm4J9yjY0rlN7uEn1Of1QAiAOR7vDuh%2FWM0zkT787r2lXOeN6WNciv1pAxuUqbt9YRyq2Agi8%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAEaDDQ2NzQ4MTMwOTE4NSIMieHVt8pV%2FVteV9huKooCCpbvxvnJ6n%2FYGeWTD5g4aG1lLquZH2llobKVzDU9lbKG9L8pZ1pLQD7hmXTBY%2FrNQWi5opKEnMzuVGufLAirl%2BHq%2B66kByV4JqLjKQ7ufELp9tLWgMiJsOrMBimBqi3VyMQXJSkwwcYl6ARvOD4uIRKrqmdCF730mHPf7sKNTikzC1iZARutcJDEPwnHeeFs%2B9cJiLYN%2BuhDH53BKLr73AWZVE%2FgHJLFMx8x0Gt025qm0vpDsZgzv3xDge2DkzRyuVsrY4Pqje7fGVejWlUJTcxnkJonLj6mSUHpb1UWhw1eMRjxrSWFa4pyFN6tmKL4RsVdxYwrDkSAdVVV2c0hAk5I3tiSFvwi8I8woPackQY6mwEvZTZbZvXspAorekM3Qsg4x4uCql42%2B6ZQlEslkHLWVsbulhds9hMsROkpEEsLpac3f%2BGzhyvn%2FjUvzE1gRywkU9%2BSnCwgzSGA3NbPx02MIMZkWMKGfVBCxhxf661R4VfrCWAyJwRSJEZukHuE7RqlZPMBT%2BgGna8kjJr3DrgDEEWX%2FcMiB8TS2IJX5DAIMe6fBWPZeccq7dWSIw%3D%3D&X-Amz-Signature=ac863838ecebfc7259f33a2ec38bc19d49fb3e4fa85322db45097c04b3c77390';
   zoom = 0.75;
   color = 'rgba(255, 255, 0, 1)';
   date = 'Date';
@@ -55,9 +57,11 @@ export class CPdfViewerComponent implements OnInit {
   constructor() {}
 
   ngOnInit(): void {
+    setTimeout(() => {
+      this.modifyTextLayerStyles();
+    }, 1000);
     if (JSON.parse(localStorage.getItem('annotations')!)) {
       setTimeout(() => {
-        this.modifyTextLayerStyles();
         this.annotations = JSON.parse(localStorage.getItem('annotations')!);
         this.annotations.forEach((annotation: IAnnotation, index: number) => {
           const node = this.getNode(annotation.targetNodeParentToChild!);
@@ -147,6 +151,7 @@ export class CPdfViewerComponent implements OnInit {
   clearStorage() {
     this.annotations = [];
     localStorage.removeItem('annotations');
+    window.location.href = window.location.href;
   }
 
   getDate() {
@@ -280,12 +285,8 @@ export class CPdfViewerComponent implements OnInit {
       );
     } else if (type == 2) {
       annotationType = AnnotationType.strikeThrough;
-      newNode.setAttribute(
-        'style',
-        `text-decoration: line-through !important;
-      color: ${this.color};
-      text-decoration-style: double;`
-      );
+      newNode.style.borderBottom = `0.2rem solid ${this.color}`;
+      newNode.style.transform = 'translateY(-50%)';
     } else if (type == 3) {
       annotationType = AnnotationType.text;
       showComment = true;
@@ -351,5 +352,17 @@ export class CPdfViewerComponent implements OnInit {
       behavior: 'smooth',
       block: 'center',
     });
+  }
+
+  getBadgeStyle(annotationType: string) {
+    if (annotationType === 'Highlight') {
+      return 'highlight-btn';
+    } else if (annotationType === 'Text') {
+      return 'annotate-btn';
+    } else if (annotationType === 'Underline') {
+      return 'underline-btn';
+    } else {
+      return 'strikethrough-btn';
+    }
   }
 }

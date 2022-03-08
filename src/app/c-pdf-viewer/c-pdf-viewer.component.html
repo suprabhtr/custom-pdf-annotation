@@ -13,17 +13,29 @@
 
   <div class="c-pdf-annotations-siderbar">
     <div class="c-pdf-annotation-tools">Annotation Tools</div>
-    <button class="c-pdf-highlight-btn" (click)="highlightSelection()">
+    <button
+      class="c-pdf-highlight-btn highlight-btn"
+      (click)="highlightSelection()"
+    >
       Highlight
     </button>
-    <button class="c-pdf-highlight-btn" (click)="annotateSelection(1)">
+    <button
+      class="c-pdf-highlight-btn underline-btn"
+      (click)="annotateSelection(1)"
+    >
       Underline
     </button>
-    <button class="c-pdf-highlight-btn" (click)="annotateSelection(2)">
+    <button
+      class="c-pdf-highlight-btn strikethrough-btn"
+      (click)="annotateSelection(2)"
+    >
       Strikeout
     </button>
-    <button class="c-pdf-highlight-btn" (click)="annotateSelection(3)">
-      Annotate
+    <button
+      class="c-pdf-highlight-btn annotate-btn"
+      (click)="annotateSelection(3)"
+    >
+      Text
     </button>
     <input
       class="c-pdf-color-picker-input"
@@ -50,12 +62,15 @@
       ]"
       [(colorPicker)]="color"
     />
-    <button class="c-pdf-highlight-btn" (click)="saveToStorage()">
-      Save Annotations
-    </button>
-    <button class="c-pdf-highlight-btn" (click)="clearStorage()">
-      Clear Annotations
-    </button>
+    <div>
+      <button class="c-pdf-highlight-btn" (click)="saveToStorage()">
+        Save Annotations
+      </button>
+      <button class="c-pdf-highlight-btn" (click)="clearStorage()">
+        Clear Annotations
+      </button>
+    </div>
+
     <hr />
     <div *ngIf="annotations.length > 0; else noAnnotation">
       <div
@@ -68,7 +83,10 @@
             <strong
               ><i>{{ username }} </i></strong
             >
-            <span class="c-pdf-annotated-badge">
+            <span
+              class="c-pdf-annotated-badge"
+              [ngClass]="getBadgeStyle(annotation.metaData.type)"
+            >
               {{ annotation.metaData.type }}</span
             >
           </div>
