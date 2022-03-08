@@ -28,6 +28,7 @@ interface IAnnotation {
   styleUrls: ['./c-pdf-viewer.component.css'],
 })
 export class CPdfViewerComponent implements OnInit {
+  blackColor = 'rgba(0,0,0,1)';
   pdfSrc = 'https://vadimdez.github.io/ng2-pdf-viewer/assets/pdf-test.pdf';
   // pdfSrc =
   //   'https://user.iiasa.ac.at/~gruebler/Lectures/Leoben00-01/ch2%20from%20book.pdf';
@@ -278,12 +279,14 @@ export class CPdfViewerComponent implements OnInit {
     let annotationType: string = '';
 
     if (type == 1) {
+      this.color = this.blackColor;
       annotationType = AnnotationType.underline;
       newNode.setAttribute(
         'style',
         `border-bottom: 0.2rem solid ${this.color} !important;`
       );
     } else if (type == 2) {
+      this.color = this.blackColor;
       annotationType = AnnotationType.strikeThrough;
       newNode.style.borderBottom = `0.2rem solid ${this.color}`;
       newNode.style.transform = 'translateY(-50%)';
