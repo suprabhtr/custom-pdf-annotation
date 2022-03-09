@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { AnnotationType } from '../annotationUtil';
 interface IAnnotation {
+  targetText: string;
   node: HTMLSpanElement;
   targetNodeParentToChild?: number[];
   backgroundColor?: string;
@@ -12,6 +13,11 @@ interface IAnnotation {
     type: string;
     date: string;
     showReplyInput: boolean;
+    // data: {
+    //   firstPart: string;
+    //   middlePart: string;
+    //   lastPart: string;
+    // };
     replies: {
       message: string;
       author: string;
@@ -67,21 +73,29 @@ export class CPdfViewerComponent implements OnInit {
         this.annotations.forEach((annotation: IAnnotation, index: number) => {
           const node = this.getNode(annotation.targetNodeParentToChild!);
           annotation.node = node;
-          annotation.node.innerText = annotation.node.innerText.slice(
-            annotation.offset!.startOffset,
-            annotation.offset!.endOffset
-          );
+          const { firstPart, secondPart, thirdPart } =
+            this.extractDataFromAnnotation(annotation);
+          annotation.node.innerHTML = '';
+
+          annotation.node.append(firstPart);
+          const span = document.createElement('span');
+          span.innerText = secondPart;
           if (
             annotation.metaData.type === AnnotationType.highlight ||
             annotation.metaData.type === AnnotationType.text
           ) {
-            annotation.node.style.background = annotation.backgroundColor!;
+            span.style.background = annotation.backgroundColor!;
+            span.style.position = 'static';
           } else if (annotation.metaData.type === AnnotationType.underline) {
-            annotation.node.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
+            span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
+            span.style.position = 'static';
           } else {
-            annotation.node.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
-            annotation.node.style.transform = 'translateY(-50%)';
+            span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
+            span.style.transform = 'translateY(-50%)';
           }
+
+          annotation.node.append(span);
+          annotation.node.append(thirdPart);
         });
       }, 1000);
     }
@@ -129,11 +143,13 @@ export class CPdfViewerComponent implements OnInit {
     //Apply Node around selection (used for individual nodes only)
     //range.surroundContents(newNode);
     const parentToChild = this.getPath(targetNode);
+    const targetText = newNode.innerText;
     const nodeData = {
       targetNodeParentToChild: parentToChild,
       node: newNode,
       offset: { startOffset: range.startOffset, endOffset: range.endOffset },
       backgroundColor: this.color,
+      targetText,
       metaData: {
         type: AnnotationType.highlight,
         date: this.getDate(),
@@ -298,11 +314,13 @@ export class CPdfViewerComponent implements OnInit {
 
     newNode.appendChild(range.cloneContents());
     const parentToChild = this.getPath(targetNode);
+    const targetText = newNode.innerText;
     const nodeData = {
       targetNodeParentToChild: parentToChild,
       offset: { startOffset: range.startOffset, endOffset: range.endOffset },
       node: newNode,
       backgroundColor: this.color,
+      targetText,
       metaData: {
         type: annotationType,
         date: this.getDate(),
@@ -367,5 +385,21 @@ export class CPdfViewerComponent implements OnInit {
     } else {
       return 'strikethrough-btn';
     }
+  }
+
+  extractDataFromAnnotation(annotation: IAnnotation) {
+    const firstPart = annotation.node.innerText.slice(
+      0,
+      annotation.offset!.startOffset
+    );
+    const thirdPart = annotation.node.innerText.slice(
+      annotation.offset!.endOffset,
+      annotation.node.innerText.length
+    );
+    const secondPart = annotation.node.innerText.slice(
+      annotation.offset!.startOffset,
+      annotation.offset!.endOffset
+    );
+    return { firstPart, secondPart, thirdPart };
   }
 }
