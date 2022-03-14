@@ -140,33 +140,113 @@ export class CPdfViewerComponent implements OnInit {
     const range = userSelection.getRangeAt(0);
     const targetNode = userSelection.anchorNode.parentElement;
     const endNode = userSelection.focusNode.parentElement;
-    const node = this.highlightRange(range, targetNode, endNode);
+    this.highlightRange(range, targetNode, endNode);
+  }
 
-    range.deleteContents();
-    range.insertNode(node);
+  updateStyesOfSelected(
+    range: any,
+    targetNode: any,
+    endNode: any,
+    annotationType: string
+  ) {
+    const startOffset = range.startOffset;
+    const endOffset = range.endOffset;
+    if (targetNode === endNode) {
+      console.log('Single line');
+      const first = targetNode.innerText.slice(0, startOffset);
+      const second = targetNode.innerText.slice(startOffset, endOffset);
+      const third = targetNode.innerText.slice(
+        endOffset,
+        targetNode.innerText.length
+      );
+
+      this.formatNodeWithContent(
+        targetNode,
+        { first, second, third },
+        annotationType
+      );
+    } else {
+      console.log('Multi Line');
+      const middleNodes = this.getInBetweenNodes(targetNode, endNode).map(
+        (path: number[]) => {
+          return this.getNode(path);
+        }
+      );
+      const nodes = [targetNode, ...middleNodes, endNode];
+      const numberOfNodes = nodes.length;
+      nodes.forEach((node, nodeIndex) => {
+        if (nodeIndex === 0) {
+          const first = node.innerText.slice(0, startOffset);
+          const second = node.innerText.slice(
+            startOffset,
+            node.innerText.length
+          );
+          const third = '';
+          this.formatNodeWithContent(
+            node,
+            { first, second, third },
+            annotationType
+          );
+        } else if (nodeIndex === numberOfNodes - 1) {
+          const first = '';
+          const second = node.innerText.slice(0, endOffset);
+          const third = node.innerText.slice(endOffset, node.innerText.length);
+
+          this.formatNodeWithContent(
+            node,
+            { first, second, third },
+            annotationType
+          );
+        } else {
+          const first = '';
+          const second = node.innerText.slice(0, node.innerText.length);
+          const third = '';
+
+          this.formatNodeWithContent(
+            node,
+            { first, second, third },
+            annotationType
+          );
+        }
+      });
+    }
+  }
+
+  formatNodeWithContent(
+    node: any,
+    { first, second, third }: { first: string; second: string; third: string },
+    annotationType: string
+  ) {
+    node.innerText = '';
+    node.append(first);
+    const span = document.createElement('span');
+    span.innerText = second;
+    if (annotationType === 'Highlight' || annotationType === 'Text') {
+      span.style.backgroundColor = this.color;
+    } else if (annotationType === 'Underline') {
+      span.style.borderBottom = `0.2rem solid ${this.color}`;
+    } else if (annotationType === 'Strikeout') {
+      span.style.borderBottom = `0.2rem solid ${this.color}`;
+      span.style.transform = 'translateY(-50%)';
+    }
+
+    node.append(span);
+    node.append(third);
   }
 
   highlightRange(range: any, targetNode: any, endNode: any) {
-    //Create the new Node
     const newNode = document.createElement('span');
 
-    // Make it highlight
-    newNode.setAttribute('style', `background-color: ${this.color};`);
-
-    //Add Text for replacement (for multiple nodes only)
-    //newNode.innerHTML += range;
     newNode.appendChild(range.cloneContents());
 
-    //Apply Node around selection (used for individual nodes only)
-    //range.surroundContents(newNode);
     const parentToChild = this.getPath(targetNode);
     const parentToChildEndNode = this.getPath(endNode);
-    const kids = this.getInBetweenNodes(targetNode, endNode);
+    const middleNodes = this.getInBetweenNodes(targetNode, endNode);
 
     const nodes =
       parentToChild.toString() === parentToChildEndNode.toString()
         ? [parentToChild]
-        : [parentToChild, ...kids, parentToChildEndNode];
+        : [parentToChild, ...middleNodes, parentToChildEndNode];
     const targetText = newNode.innerText;
     const nodeData = {
       targetNodeParentToChild: nodes,
@@ -182,7 +262,7 @@ export class CPdfViewerComponent implements OnInit {
       },
     };
     this.annotations.push(nodeData);
-    return newNode;
+    this.updateStyesOfSelected(range, targetNode, endNode, 'Highlight');
   }
 
   saveToStorage() {
@@ -264,8 +344,6 @@ export class CPdfViewerComponent implements OnInit {
   }
 
   editReply(replyIndex: number, annotationIndex: number) {
-    console.log(replyIndex);
-    console.log(annotationIndex);
     this.annotations[annotationIndex].metaData.replies[replyIndex].isEditOpen =
       true;
   }
@@ -308,10 +386,7 @@ export class CPdfViewerComponent implements OnInit {
     const range = userSelection.getRangeAt(0);
     const targetNode = userSelection.anchorNode.parentElement;
     const endNode = userSelection.focusNode.parentElement;
-    const node = this.annotateRange(range, targetNode, annotationType, endNode);
-
-    range.deleteContents();
-    range.insertNode(node);
+    this.annotateRange(range, targetNode, annotationType, endNode);
   }
 
   annotateRange(range: Range, targetNode: any, type: number, endNode: any) {
@@ -340,11 +415,11 @@ export class CPdfViewerComponent implements OnInit {
     newNode.appendChild(range.cloneContents());
     const parentToChild = this.getPath(targetNode);
     const pathToLast = this.getPath(endNode);
-    const kids = this.getInBetweenNodes(targetNode, endNode);
+    const middleNodes = this.getInBetweenNodes(targetNode, endNode);
     const nodes =
       targetNode === endNode
         ? [parentToChild]
-        : [parentToChild, ...kids, pathToLast];
+        : [parentToChild, ...middleNodes, pathToLast];
     const targetText = newNode.innerText;
 
     const nodeData = {
@@ -361,21 +436,21 @@ export class CPdfViewerComponent implements OnInit {
       },
     };
     this.annotations.push(nodeData);
-    return newNode;
+    this.updateStyesOfSelected(range, targetNode, endNode, annotationType);
   }
 
   getInBetweenNodes(targetNode: any, endNode: any) {
-    const kids = [];
+    const middleNodes = [];
     let current = targetNode.nextSibling;
     while (current && current !== endNode) {
       // current = current.nextSibling;
       if (current.nodeName == 'SPAN') {
         const path = this.getPath(current);
-        kids.push(path);
+        middleNodes.push(path);
       }
       current = current.nextSibling;
     }
-    return kids;
+    return middleNodes;
   }
 
   getPath(currentNode: any) {
@@ -405,12 +480,8 @@ export class CPdfViewerComponent implements OnInit {
       return path;
     }
 
-    // Executing the function
     const path = getPath(root, currentNode);
-
-    // Printing final path in the browser
-    console.log('path ---->', path);
-    console.log(`Reversing the path from top to bottom - ${path.reverse()}`);
+    path.reverse();
     return path;
   }
 
