@@ -141,6 +141,7 @@ export class CPdfViewerComponent implements OnInit {
     const targetNode = userSelection.anchorNode.parentElement;
     const endNode = userSelection.focusNode.parentElement;
     this.highlightRange(range, targetNode, endNode);
+    userSelection.removeAllRanges();
   }
 
   updateStyesOfSelected(
@@ -152,7 +153,6 @@ export class CPdfViewerComponent implements OnInit {
     const startOffset = range.startOffset;
     const endOffset = range.endOffset;
     if (targetNode === endNode) {
-      console.log('Single line');
       const first = targetNode.innerText.slice(0, startOffset);
       const second = targetNode.innerText.slice(startOffset, endOffset);
       const third = targetNode.innerText.slice(
@@ -166,7 +166,6 @@ export class CPdfViewerComponent implements OnInit {
         annotationType
       );
     } else {
-      console.log('Multi Line');
       const middleNodes = this.getInBetweenNodes(targetNode, endNode).map(
         (path: number[]) => {
           return this.getNode(path);
@@ -387,6 +386,7 @@ export class CPdfViewerComponent implements OnInit {
     const targetNode = userSelection.anchorNode.parentElement;
     const endNode = userSelection.focusNode.parentElement;
     this.annotateRange(range, targetNode, annotationType, endNode);
+    userSelection.removeAllRanges();
   }
 
   annotateRange(range: Range, targetNode: any, type: number, endNode: any) {
