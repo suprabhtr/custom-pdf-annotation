@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Params } from '@angular/router';
 import { AnnotationType } from '../annotationUtil';
 interface IAnnotation {
   targetText: string;
   node: HTMLSpanElement;
-  targetNodeParentToChild?: number[];
+  targetNodeParentToChild?: number[][];
   backgroundColor?: string;
   offset?: {
     startOffset: number;
@@ -36,11 +37,7 @@ interface IAnnotation {
 export class CPdfViewerComponent implements OnInit {
   blackColor = 'rgba(0,0,0,1)';
   pdfSrc = 'https://vadimdez.github.io/ng2-pdf-viewer/assets/pdf-test.pdf';
-  // pdfSrc =
-  //   'https://user.iiasa.ac.at/~gruebler/Lectures/Leoben00-01/ch2%20from%20book.pdf';
 
-  // pdfSrc =
-  //   'https://a207958-cf-pas-live-publicationassembly-execution-qa-use1.s3.amazonaws.com/f8963d8d-8349-4f00-9a52-a8459297d299/CET_BR_D2021-07-26_0053_1.pdf?response-content-disposition=inline&response-content-type=application%2Fpdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAWZWAOWAASTP34HUW%2F20220308%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220308T111652Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEFQaCXVzLWVhc3QtMSJGMEQCIDdGvh7vnAjV%2FoePFlxRW7JJm4J9yjY0rlN7uEn1Of1QAiAOR7vDuh%2FWM0zkT787r2lXOeN6WNciv1pAxuUqbt9YRyq2Agi8%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAEaDDQ2NzQ4MTMwOTE4NSIMieHVt8pV%2FVteV9huKooCCpbvxvnJ6n%2FYGeWTD5g4aG1lLquZH2llobKVzDU9lbKG9L8pZ1pLQD7hmXTBY%2FrNQWi5opKEnMzuVGufLAirl%2BHq%2B66kByV4JqLjKQ7ufELp9tLWgMiJsOrMBimBqi3VyMQXJSkwwcYl6ARvOD4uIRKrqmdCF730mHPf7sKNTikzC1iZARutcJDEPwnHeeFs%2B9cJiLYN%2BuhDH53BKLr73AWZVE%2FgHJLFMx8x0Gt025qm0vpDsZgzv3xDge2DkzRyuVsrY4Pqje7fGVejWlUJTcxnkJonLj6mSUHpb1UWhw1eMRjxrSWFa4pyFN6tmKL4RsVdxYwrDkSAdVVV2c0hAk5I3tiSFvwi8I8woPackQY6mwEvZTZbZvXspAorekM3Qsg4x4uCql42%2B6ZQlEslkHLWVsbulhds9hMsROkpEEsLpac3f%2BGzhyvn%2FjUvzE1gRywkU9%2BSnCwgzSGA3NbPx02MIMZkWMKGfVBCxhxf661R4VfrCWAyJwRSJEZukHuE7RqlZPMBT%2BgGna8kjJr3DrgDEEWX%2FcMiB8TS2IJX5DAIMe6fBWPZeccq7dWSIw%3D%3D&X-Amz-Signature=ac863838ecebfc7259f33a2ec38bc19d49fb3e4fa85322db45097c04b3c77390';
   zoom = 0.75;
   color = 'rgba(255, 255, 0, 1)';
   date = 'Date';
@@ -61,9 +58,13 @@ export class CPdfViewerComponent implements OnInit {
     'December',
   ];
   replyText = '';
-  constructor() {}
+  constructor(private router: ActivatedRoute) {}
 
   ngOnInit(): void {
+    this.router.queryParams.subscribe((params: Params) => {
+      this.pdfSrc = params['pdfURL'] || this.pdfSrc;
+    });
+
     setTimeout(() => {
       this.modifyTextLayerStyles();
     }, 1000);
@@ -71,31 +72,46 @@ export class CPdfViewerComponent implements OnInit {
       setTimeout(() => {
         this.annotations = JSON.parse(localStorage.getItem('annotations')!);
         this.annotations.forEach((annotation: IAnnotation, index: number) => {
-          const node = this.getNode(annotation.targetNodeParentToChild!);
-          annotation.node = node;
-          const { firstPart, secondPart, thirdPart } =
-            this.extractDataFromAnnotation(annotation);
-          annotation.node.innerHTML = '';
+          const isMultiLine =
+            annotation.targetNodeParentToChild!.length > 1 ? true : false;
+          annotation.targetNodeParentToChild!.forEach(
+            (nodesPath, selectionLineindex) => {
+              const node = this.getNode(nodesPath);
+              annotation.node = node;
+              const { firstPart, secondPart, thirdPart } =
+                this.extractDataFromAnnotation(
+                  annotation,
+                  selectionLineindex,
+                  isMultiLine,
+                  annotation.targetNodeParentToChild!.length
+                );
+              if (annotation.node) {
+                annotation.node.innerHTML = '';
 
-          annotation.node.append(firstPart);
-          const span = document.createElement('span');
-          span.innerText = secondPart;
-          if (
-            annotation.metaData.type === AnnotationType.highlight ||
-            annotation.metaData.type === AnnotationType.text
-          ) {
-            span.style.background = annotation.backgroundColor!;
-            span.style.position = 'static';
-          } else if (annotation.metaData.type === AnnotationType.underline) {
-            span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
-            span.style.position = 'static';
-          } else {
-            span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
-            span.style.transform = 'translateY(-50%)';
-          }
+                annotation.node.append(firstPart);
+                const span = document.createElement('span');
+                span.innerText = secondPart;
+                if (
+                  annotation.metaData.type === AnnotationType.highlight ||
+                  annotation.metaData.type === AnnotationType.text
+                ) {
+                  span.style.background = annotation.backgroundColor!;
+                  span.style.position = 'static';
+                } else if (
+                  annotation.metaData.type === AnnotationType.underline
+                ) {
+                  span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
+                  span.style.position = 'static';
+                } else {
+                  span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
+                  span.style.transform = 'translateY(-50%)';
+                }
 
-          annotation.node.append(span);
-          annotation.node.append(thirdPart);
+                annotation.node.append(span);
+                annotation.node.append(thirdPart);
+              }
+            }
+          );
         });
       }, 1000);
     }
@@ -123,13 +139,14 @@ export class CPdfViewerComponent implements OnInit {
     //Attempting to highlight multiple selections (for multiple nodes only + Currently removes the formatting)
     const range = userSelection.getRangeAt(0);
     const targetNode = userSelection.anchorNode.parentElement;
-    const node = this.highlightRange(range, targetNode);
+    const endNode = userSelection.focusNode.parentElement;
+    const node = this.highlightRange(range, targetNode, endNode);
 
     range.deleteContents();
     range.insertNode(node);
   }
 
-  highlightRange(range: any, targetNode: any) {
+  highlightRange(range: any, targetNode: any, endNode: any) {
     //Create the new Node
     const newNode = document.createElement('span');
 
@@ -143,9 +160,16 @@ export class CPdfViewerComponent implements OnInit {
     //Apply Node around selection (used for individual nodes only)
     //range.surroundContents(newNode);
     const parentToChild = this.getPath(targetNode);
+    const parentToChildEndNode = this.getPath(endNode);
+    const kids = this.getInBetweenNodes(targetNode, endNode);
+
+    const nodes =
+      parentToChild.toString() === parentToChildEndNode.toString()
+        ? [parentToChild]
+        : [parentToChild, ...kids, parentToChildEndNode];
     const targetText = newNode.innerText;
     const nodeData = {
-      targetNodeParentToChild: parentToChild,
+      targetNodeParentToChild: nodes,
       node: newNode,
       offset: { startOffset: range.startOffset, endOffset: range.endOffset },
       backgroundColor: this.color,
@@ -283,13 +307,14 @@ export class CPdfViewerComponent implements OnInit {
     const userSelection: any = window.getSelection();
     const range = userSelection.getRangeAt(0);
     const targetNode = userSelection.anchorNode.parentElement;
-    const node = this.annotateRange(range, targetNode, annotationType);
+    const endNode = userSelection.focusNode.parentElement;
+    const node = this.annotateRange(range, targetNode, annotationType, endNode);
 
     range.deleteContents();
     range.insertNode(node);
   }
 
-  annotateRange(range: Range, targetNode: any, type: number) {
+  annotateRange(range: Range, targetNode: any, type: number, endNode: any) {
     const newNode = document.createElement('span');
     let showComment: boolean = false;
     let annotationType: string = '';
@@ -314,9 +339,16 @@ export class CPdfViewerComponent implements OnInit {
 
     newNode.appendChild(range.cloneContents());
     const parentToChild = this.getPath(targetNode);
+    const pathToLast = this.getPath(endNode);
+    const kids = this.getInBetweenNodes(targetNode, endNode);
+    const nodes =
+      targetNode === endNode
+        ? [parentToChild]
+        : [parentToChild, ...kids, pathToLast];
     const targetText = newNode.innerText;
+
     const nodeData = {
-      targetNodeParentToChild: parentToChild,
+      targetNodeParentToChild: nodes,
       offset: { startOffset: range.startOffset, endOffset: range.endOffset },
       node: newNode,
       backgroundColor: this.color,
@@ -330,6 +362,20 @@ export class CPdfViewerComponent implements OnInit {
     };
     this.annotations.push(nodeData);
     return newNode;
+  }
+
+  getInBetweenNodes(targetNode: any, endNode: any) {
+    const kids = [];
+    let current = targetNode.nextSibling;
+    while (current && current !== endNode) {
+      // current = current.nextSibling;
+      if (current.nodeName == 'SPAN') {
+        const path = this.getPath(current);
+        kids.push(path);
+      }
+      current = current.nextSibling;
+    }
+    return kids;
   }
 
   getPath(currentNode: any) {
@@ -387,19 +433,71 @@ export class CPdfViewerComponent implements OnInit {
     }
   }
 
-  extractDataFromAnnotation(annotation: IAnnotation) {
-    const firstPart = annotation.node.innerText.slice(
-      0,
-      annotation.offset!.startOffset
-    );
-    const thirdPart = annotation.node.innerText.slice(
-      annotation.offset!.endOffset,
-      annotation.node.innerText.length
-    );
-    const secondPart = annotation.node.innerText.slice(
-      annotation.offset!.startOffset,
-      annotation.offset!.endOffset
-    );
-    return { firstPart, secondPart, thirdPart };
+  extractDataFromAnnotation(
+    annotation: IAnnotation,
+    selectionLineIndex: number,
+    isMultiLine: boolean,
+    numberOfLine: number
+  ) {
+    const def: any = {
+      firstPart: '',
+      secondPart: '',
+      thirdPart: '',
+    };
+    if (!annotation.node) {
+      return def;
+    }
+    if (isMultiLine && selectionLineIndex === 0) {
+      const firstPart = annotation.node.innerText.slice(
+        0,
+        annotation.offset!.startOffset
+      );
+      const secondPart = annotation.node.innerText.slice(
+        annotation.offset!.startOffset,
+        annotation.node.innerText.length
+      );
+      const thirdPart = '';
+      return {
+        firstPart,
+        secondPart,
+        thirdPart,
+      };
+    } else if (isMultiLine && selectionLineIndex === numberOfLine - 1) {
+      const firstPart = '';
+      const secondPart = annotation.node.innerText.slice(
+        0,
+        annotation.offset!.endOffset
+      );
+      const thirdPart = annotation.node.innerText.slice(
+        annotation.offset!.endOffset,
+        annotation.node.innerText.length
+      );
+
+      return { firstPart, secondPart, thirdPart };
+    } else if (numberOfLine === 1) {
+      const firstPart = annotation.node.innerText.slice(
+        0,
+        annotation.offset!.startOffset
+      );
+      const secondPart = annotation.node.innerText.slice(
+        annotation.offset!.startOffset,
+        annotation.offset!.endOffset
+      );
+      const thirdPart = annotation.node.innerText.slice(
+        annotation.offset!.endOffset,
+        annotation.node.innerText.length
+      );
+
+      return { firstPart, secondPart, thirdPart };
+    } else {
+      const firstPart = '';
+      const secondPart = annotation.node.innerText.slice(
+        0,
+        annotation.node.innerText.length
+      );
+      const thirdPart = '';
+
+      return { firstPart, secondPart, thirdPart };
+    }
   }
 }
