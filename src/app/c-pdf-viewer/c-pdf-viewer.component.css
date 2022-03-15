@@ -69,6 +69,7 @@
 .c-pdf-annotated-card-user {
   display: flex;
   justify-content: space-between;
+  margin-bottom: 5px;
 }
 
 .c-pdf-annotated-card-body {
@@ -151,7 +152,7 @@
   cursor: pointer;
 }
 .c-pdf-annotated-badge {
-  padding: 2% 8%;
-  border-radius: 30rem;
+  padding: 5px 10px;
+  border-radius: 30px;
   font-size: smaller;
 }

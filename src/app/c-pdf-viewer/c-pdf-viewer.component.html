@@ -84,17 +84,19 @@
             <strong
               ><i>{{ username }} </i></strong
             >
-            <span
-              class="c-pdf-annotated-badge"
-              [ngClass]="getBadgeStyle(annotation.metaData.type)"
-            >
-              {{ annotation.metaData.type }}</span
-            >
-            <span class="c-pdf-annotated-badge"
-              >Page No - {{ annotation.pageNumber }}</span
-            >
           </div>
           <div>{{ annotation.metaData.date }}</div>
+        </div>
+        <div>
+          <span
+            class="c-pdf-annotated-badge"
+            [ngClass]="getBadgeStyle(annotation.metaData.type)"
+          >
+            {{ annotation.metaData.type }}</span
+          >
+          <span class="c-pdf-annotated-badge"
+            >Page No - {{ annotation.pageNumber }}</span
+          >
         </div>
         <div class="c-pdf-annotated-card-body">
           <blockquote class="c-pdf-annotated-card-body-blockquote">
