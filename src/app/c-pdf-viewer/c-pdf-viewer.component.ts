@@ -298,7 +298,22 @@ export class CPdfViewerComponent implements OnInit {
   }
 
   removeNode(index: number) {
-    this.deletenode(this.annotations[index].node);
+    const nodesPath = this.annotations[index].targetNodeParentToChild;
+    const nodes = nodesPath?.map((nodePath: number[]) =>
+      this.getNode(nodePath)
+    );
+    nodes?.forEach((node: any) => {
+      let innerText = '';
+      node.childNodes.forEach((childNode: any) => {
+        if (childNode.nodeName === '#text') {
+          innerText += childNode.data;
+        } else {
+          innerText += childNode.innerText;
+        }
+      });
+      node.innerHTML = innerText;
+    });
+
     this.annotations.splice(index, 1);
   }
 
