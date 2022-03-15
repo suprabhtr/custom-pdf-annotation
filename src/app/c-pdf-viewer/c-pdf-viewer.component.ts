@@ -271,7 +271,7 @@ export class CPdfViewerComponent implements OnInit {
   clearStorage() {
     this.annotations = [];
     localStorage.removeItem('annotations');
-    window.location.href = window.location.href;
+    window.location.reload();
   }
 
   getDate() {
