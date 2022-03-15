@@ -8,6 +8,7 @@
       [original-size]="false"
       style="height: 80vh"
       [zoom]="zoom"
+      (text-layer-rendered)="textLayerRendered($event)"
     ></pdf-viewer>
   </div>
 
@@ -76,7 +77,7 @@
       <div
         class="c-pdf-annotated-card"
         *ngFor="let annotation of annotations; let index = index"
-        (click)="scrollIntoView(index)"
+        (click)="scrollIntoView(annotation.pageNumber)"
       >
         <div class="c-pdf-annotated-card-user">
           <div>
@@ -88,6 +89,9 @@
               [ngClass]="getBadgeStyle(annotation.metaData.type)"
             >
               {{ annotation.metaData.type }}</span
+            >
+            <span class="c-pdf-annotated-badge"
+              >Page No - {{ annotation.pageNumber }}</span
             >
           </div>
           <div>{{ annotation.metaData.date }}</div>
