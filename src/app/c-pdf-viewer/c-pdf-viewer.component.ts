@@ -140,16 +140,12 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
         canvas.style.bottom = '0';
         canvas.style.left = '0';
         canvas.style.zIndex = '1000';
+        canvas.style.border = '1px solid';
         canvas.setAttribute('class', 'free-hand-drawing');
         canvas.setAttribute('id', index.toString());
-
         this.cx[index] = canvas.getContext('2d');
         page.appendChild(canvas);
         if (!this.cx) throw 'Cannot get context';
-
-        this.cx[index].lineWidth = 3;
-        this.cx[index].lineCap = 'round';
-        this.cx[index].strokeStyle = '#000';
 
         this.captureEvents(canvas);
       });
@@ -206,10 +202,13 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
     }
 
     this.cx[id].beginPath();
+    console.log(
+      `Prev X: ${prevPos.x} Y: ${prevPos.y}, Current X: ${currentPos.x} Y: ${currentPos.y}`
+    );
 
     if (prevPos) {
-      this.cx[id].lineWidth = 10;
-      this.cx[id].strokeStyle = 'red';
+      this.cx[id].lineWidth = 3;
+      this.cx[id].strokeStyle = this.color;
       this.cx[id].moveTo(prevPos.x, prevPos.y); // from
       this.cx[id].lineTo(currentPos.x, currentPos.y);
       this.cx[id].stroke();

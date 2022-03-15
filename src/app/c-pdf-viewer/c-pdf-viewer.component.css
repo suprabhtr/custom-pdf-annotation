@@ -50,6 +50,11 @@
   color: white;
 }
 
+.toggle-drawing-btn {
+  background-color: green;
+  color: white;
+}
+
 .c-pdf-color-picker-input {
   padding: 6px 10px;
   border-radius: 6px;

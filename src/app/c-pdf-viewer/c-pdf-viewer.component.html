@@ -1,7 +1,7 @@
 <div class="c-pdf-content-container">
   <div class="c-pdf-content-viewer">
     Render PDF here.
-
+    <!-- <app-canvas></app-canvas> -->
     <pdf-viewer
       [src]="pdfSrc"
       [render-text]="true"
@@ -36,6 +36,12 @@
       (click)="annotateSelection(3)"
     >
       Text
+    </button>
+    <button
+      class="c-pdf-highlight-btn toggle-drawing-btn"
+      (click)="toggleDrawingMode()"
+    >
+      Toggle Hand Drawing
     </button>
     <input
       class="c-pdf-color-picker-input"
