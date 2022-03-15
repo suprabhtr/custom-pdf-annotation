@@ -1,5 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
+import { fromEvent } from 'rxjs';
+import { switchMap, takeUntil, pairwise } from 'rxjs/operators';
 import { AnnotationType } from '../annotationUtil';
 interface IAnnotation {
   targetText: string;
@@ -34,10 +36,11 @@ interface IAnnotation {
   templateUrl: './c-pdf-viewer.component.html',
   styleUrls: ['./c-pdf-viewer.component.css'],
 })
-export class CPdfViewerComponent implements OnInit {
+export class CPdfViewerComponent implements OnInit, AfterViewInit {
   blackColor = 'rgba(0,0,0,1)';
   pdfSrc = 'https://vadimdez.github.io/ng2-pdf-viewer/assets/pdf-test.pdf';
-
+  pages: any = [];
+  cx: any = {};
   zoom = 0.75;
   color = 'rgba(255, 255, 0, 1)';
   date = 'Date';
@@ -115,6 +118,114 @@ export class CPdfViewerComponent implements OnInit {
         });
       }, 1000);
     }
+  }
+
+  public ngAfterViewInit(): void {
+    setTimeout(() => {
+      this.pages = document.querySelectorAll('[data-page-number]');
+      const textLayers: any = document.querySelectorAll("[class='textLayer']");
+      this.pages.forEach((page: any, index: number) => {
+        // create a new canvas and append it in the page..
+
+        if (textLayers[index] && textLayers[index].style!) {
+          textLayers[index].style.zIndex = '1';
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.style.height = page.style.height;
+        canvas.style.width = page.style.width;
+        canvas.style.position = 'absolute';
+        canvas.style.top = '0';
+        canvas.style.right = '0';
+        canvas.style.bottom = '0';
+        canvas.style.left = '0';
+        canvas.style.zIndex = '1000';
+        canvas.setAttribute('class', 'free-hand-drawing');
+        canvas.setAttribute('id', index.toString());
+
+        this.cx[index] = canvas.getContext('2d');
+        page.appendChild(canvas);
+        if (!this.cx) throw 'Cannot get context';
+
+        this.cx[index].lineWidth = 3;
+        this.cx[index].lineCap = 'round';
+        this.cx[index].strokeStyle = '#000';
+
+        this.captureEvents(canvas);
+      });
+    }, 1000);
+  }
+
+  private captureEvents(canvasEl: HTMLCanvasElement) {
+    // this will capture all mousedown events from the canvas element
+    const id = canvasEl.id;
+    fromEvent(canvasEl, 'mousedown')
+      .pipe(
+        switchMap((e) => {
+          // after a mouse down, we'll record all mouse moves
+          return fromEvent(canvasEl, 'mousemove').pipe(
+            // we'll stop (and unsubscribe) once the user releases the mouse
+            // this will trigger a 'mouseup' event
+            takeUntil(fromEvent(canvasEl, 'mouseup')),
+            // we'll also stop (and unsubscribe) once the mouse leaves the canvas (mouseleave event)
+            takeUntil(fromEvent(canvasEl, 'mouseleave')),
+            // pairwise lets us get the previous value to draw a line from
+            // the previous point to the current point
+            pairwise()
+          );
+        })
+      )
+      .subscribe((res) => {
+        const rect = canvasEl.getBoundingClientRect();
+        const prevMouseEvent = res[0] as MouseEvent;
+        const currMouseEvent = res[1] as MouseEvent;
+
+        // previous and current position with the offset
+        const prevPos = {
+          x: prevMouseEvent.clientX - rect.left,
+          y: prevMouseEvent.clientY - rect.top,
+        };
+
+        const currentPos = {
+          x: currMouseEvent.clientX - rect.left,
+          y: currMouseEvent.clientY - rect.top,
+        };
+
+        // this method we'll implement soon to do the actual drawing
+        this.drawOnCanvas(prevPos, currentPos, id);
+      });
+  }
+
+  private drawOnCanvas(
+    prevPos: { x: number; y: number },
+    currentPos: { x: number; y: number },
+    id: string
+  ) {
+    if (!this.cx[id]) {
+      return;
+    }
+
+    this.cx[id].beginPath();
+
+    if (prevPos) {
+      this.cx[id].lineWidth = 10;
+      this.cx[id].strokeStyle = 'red';
+      this.cx[id].moveTo(prevPos.x, prevPos.y); // from
+      this.cx[id].lineTo(currentPos.x, currentPos.y);
+      this.cx[id].stroke();
+    }
+  }
+
+  toggleDrawingMode() {
+    this.pages.forEach((page: any, index: number) => {
+      const textLayer = page.querySelector("[class='textLayer']");
+      const drawingLayer = page.querySelector("[class='free-hand-drawing']");
+      if (textLayer) {
+        const temp = textLayer.style.zIndex;
+        textLayer.style.zIndex = drawingLayer.style.zIndex;
+        drawingLayer.style.zIndex = temp;
+      }
+    });
   }
 
   modifyTextLayerStyles() {
