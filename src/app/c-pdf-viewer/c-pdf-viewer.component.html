@@ -8,13 +8,35 @@
       [original-size]="false"
       style="height: 80vh"
       [zoom]="zoom"
+      (text-layer-rendered)="textLayerRendered($event)"
     ></pdf-viewer>
   </div>
 
   <div class="c-pdf-annotations-siderbar">
     <div class="c-pdf-annotation-tools">Annotation Tools</div>
-    <button class="c-pdf-highlight-btn" (click)="highlightSelection()">
+    <button
+      class="c-pdf-highlight-btn highlight-btn"
+      (click)="highlightSelection()"
+    >
       Highlight
+    </button>
+    <button
+      class="c-pdf-highlight-btn underline-btn"
+      (click)="annotateSelection(1)"
+    >
+      Underline
+    </button>
+    <button
+      class="c-pdf-highlight-btn strikethrough-btn"
+      (click)="annotateSelection(2)"
+    >
+      Strikeout
+    </button>
+    <button
+      class="c-pdf-highlight-btn annotate-btn"
+      (click)="annotateSelection(3)"
+    >
+      Text
     </button>
     <input
       class="c-pdf-color-picker-input"
@@ -41,18 +63,21 @@
       ]"
       [(colorPicker)]="color"
     />
-    <button class="c-pdf-highlight-btn" (click)="saveToStorage()">
-      Save Annotations
-    </button>
-    <button class="c-pdf-highlight-btn" (click)="clearStorage()">
-      Clear Annotations
-    </button>
+    <div>
+      <button class="c-pdf-highlight-btn" (click)="saveToStorage()">
+        Save Annotations
+      </button>
+      <button class="c-pdf-highlight-btn" (click)="clearStorage()">
+        Clear Annotations
+      </button>
+    </div>
+
     <hr />
     <div *ngIf="annotations.length > 0; else noAnnotation">
       <div
         class="c-pdf-annotated-card"
         *ngFor="let annotation of annotations; let index = index"
-        (click)="scrollIntoView(index)"
+        (click)="scrollIntoView(annotation.pageNumber)"
       >
         <div class="c-pdf-annotated-card-user">
           <div>
@@ -62,9 +87,20 @@
           </div>
           <div>{{ annotation.metaData.date }}</div>
         </div>
+        <div>
+          <span
+            class="c-pdf-annotated-badge"
+            [ngClass]="getBadgeStyle(annotation.metaData.type)"
+          >
+            {{ annotation.metaData.type }}</span
+          >
+          <span class="c-pdf-annotated-badge"
+            >Page No - {{ annotation.pageNumber }}</span
+          >
+        </div>
         <div class="c-pdf-annotated-card-body">
           <blockquote class="c-pdf-annotated-card-body-blockquote">
-            <i>{{ annotation.node.innerText }}</i>
+            <i>{{ annotation.targetText }}</i>
           </blockquote>
         </div>
         <div
@@ -150,6 +186,7 @@
     <span id="control"
       ><button class="c-pdf-annotate-btn">Annotate</button
       ><button class="c-pdf-highlightt-btn">Highlight</button>
+      <button class="c-pdf-highlightt-btn">Add Text</button>
     </span>
   </template>
 </div>

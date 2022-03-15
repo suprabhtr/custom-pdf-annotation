@@ -30,10 +30,31 @@
   border-color: grey;
 }
 
+.highlight-btn {
+  background-color: orange;
+  color: white;
+}
+
+.underline-btn {
+  background-color: blueviolet;
+  color: white;
+}
+
+.strikethrough-btn {
+  background-color: tomato;
+  color: white;
+}
+
+.annotate-btn {
+  background-color: black;
+  color: white;
+}
+
 .c-pdf-color-picker-input {
   padding: 6px 10px;
   border-radius: 6px;
   border-color: grey;
+  margin-left: 5px;
 }
 
 .c-pdf-annotated-card {
@@ -48,6 +69,7 @@
 .c-pdf-annotated-card-user {
   display: flex;
   justify-content: space-between;
+  margin-bottom: 5px;
 }
 
 .c-pdf-annotated-card-body {
@@ -128,4 +150,9 @@
   border-radius: 6px;
   color: red;
   cursor: pointer;
+}
+.c-pdf-annotated-badge {
+  padding: 5px 10px;
+  border-radius: 30px;
+  font-size: smaller;
 }

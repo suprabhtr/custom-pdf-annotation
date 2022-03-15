@@ -1,0 +1,11 @@
+<div>
+  <div>Add your PDF URL to load the interact with the annotation tool</div>
+  <input
+    class="pdf-url-input"
+    placeholder="Please add your URL here"
+    [(ngModel)]="pdfURL"
+  />
+  <button class="load-tool-btn" (click)="loadTool()" [disabled]="!pdfURL">
+    Load tool
+  </button>
+</div>

@@ -1,15 +1,25 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Params } from '@angular/router';
+import { AnnotationType } from '../annotationUtil';
 interface IAnnotation {
+  pageNumber: string;
+  targetText: string;
   node: HTMLSpanElement;
-  targetNodeParentToChild: number[];
-  backgroundColor: string;
-  offset: {
+  targetNodeParentToChild?: number[][];
+  backgroundColor?: string;
+  offset?: {
     startOffset: number;
     endOffset: number;
   };
   metaData: {
+    type: string;
     date: string;
     showReplyInput: boolean;
+    // data: {
+    //   firstPart: string;
+    //   middlePart: string;
+    //   lastPart: string;
+    // };
     replies: {
       message: string;
       author: string;
@@ -26,15 +36,14 @@ interface IAnnotation {
   styleUrls: ['./c-pdf-viewer.component.css'],
 })
 export class CPdfViewerComponent implements OnInit {
+  blackColor = 'rgba(0,0,0,1)';
   pdfSrc = 'https://vadimdez.github.io/ng2-pdf-viewer/assets/pdf-test.pdf';
-  // pdfSrc =
-  //   'https://a207958-cf-pas-live-publicationassembly-execution-qa-use1.s3.amazonaws.com/f8963d8d-8349-4f00-9a52-a8459297d299/CET_BR_D2021-07-26_0053_1.pdf?response-content-disposition=inline&response-content-type=application%2Fpdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAWZWAOWAAVJZ4S32V%2F20220225%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220225T074626Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEEgaCXVzLWVhc3QtMSJHMEUCIQCjOkOeIqMJDii8OfF17BIYyT4LHjujdbOL2AqTL2DbHQIgIaOcOlWrd%2FPKEHAfAXhAj0au2%2BMFFXlJTOImqwT0Z0kqtgIIof%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARABGgw0Njc0ODEzMDkxODUiDNA635QwHFZR5P%2B8HiqKAqeD8HeQqY5Od2Np7t2vw4eW3iE0nTgZaXqnzP2g9RFa8Sx1EzcNjdZBbEmQLV5XRISyR87pXok2pqBUyqTCfeJYBFCZ2DZxY3Q23xLbKUAi0%2F4fzTJGeoj3fAI6lClZd1OGeabnxSAJIp%2FYqX2gkX9W4O%2BJPKj7HYHn5oTkX2PWzurSMbWVIsm9lP6R%2B1qjzH7Y8%2BX0gOzc8L%2BQSvpmDiw%2BUoHZU3o4a44oT3XYZiU88TEB3RpU%2BWGEAt5RPrY8SlBQx8iaRn7rGDz0DYjNNu8jbMrSxE1B2x4AH7PqJWyEALm131SUiJ1EbdVZ8cju4JaI9rsxvyb3nd1z%2B0KrVIPk1RWKSJBBDFa3MOGR4pAGOpoBRw1M1xJ4GbSQatVSokhS2a0ijX8CIs%2F34B5JCpfB9uCVdTtd7igoAQO4F%2F%2FyEULVEtAaL4cuksfVQIW0aqrvv%2Bd8q7l%2BqDkN1%2Fcxz7BOKZrvBtKBkAudDm4fp67UnUSh%2BjENnSVDKQTAK%2FYcaHhGOGNiX47sEwOM8CizzFk1Tp5T%2BptDx%2F41NIQ07bQRunFPAMj1P2u8PpfinQ%3D%3D&X-Amz-Signature=10f0b86f0715e75a41e7dca35db9fa36246219e9d12b07585adea0dfd23bd266';
 
   zoom = 0.75;
   color = 'rgba(255, 255, 0, 1)';
   date = 'Date';
   annotations: IAnnotation[] = [];
-  username = 'Suprabh';
+  username = 'Lorem';
   monthNames = [
     'January',
     'February',
@@ -50,23 +59,68 @@ export class CPdfViewerComponent implements OnInit {
     'December',
   ];
   replyText = '';
-  constructor() {}
+  constructor(private router: ActivatedRoute) {
+    this.annotations = localStorage.getItem('annotations')!
+      ? JSON.parse(localStorage.getItem('annotations')!)
+      : [];
+  }
 
   ngOnInit(): void {
-    if (JSON.parse(localStorage.getItem('annotations')!)) {
-      setTimeout(() => {
-        this.annotations = JSON.parse(localStorage.getItem('annotations')!);
-        this.annotations.forEach((annotation: IAnnotation, index: number) => {
-          const node = this.getNode(annotation.targetNodeParentToChild);
+    this.router.queryParams.subscribe((params: Params) => {
+      this.pdfSrc = params['pdfURL'] || this.pdfSrc;
+    });
+  }
+
+  textLayerRendered(event: any) {
+    const textLayer = event.source.textLayerDiv;
+    textLayer.style.opacity = 0.5;
+    this.populateAnnotationsOnRenderedPage(event.pageNumber.toString());
+  }
+
+  populateAnnotationsOnRenderedPage(pageNumber: string) {
+    this.annotations.forEach((annotation: IAnnotation, index: number) => {
+      if (annotation.pageNumber !== pageNumber) {
+        return;
+      }
+      const isMultiLine =
+        annotation.targetNodeParentToChild!.length > 1 ? true : false;
+      annotation.targetNodeParentToChild!.forEach(
+        (nodesPath, selectionLineindex) => {
+          const node = this.getNode(nodesPath);
           annotation.node = node;
-          annotation.node.innerText = annotation.node.innerText.slice(
-            annotation.offset.startOffset,
-            annotation.offset.endOffset
-          );
-          annotation.node.style.background = annotation.backgroundColor;
-        });
-      }, 1000);
-    }
+          const { firstPart, secondPart, thirdPart } =
+            this.extractDataFromAnnotation(
+              annotation,
+              selectionLineindex,
+              isMultiLine,
+              annotation.targetNodeParentToChild!.length
+            );
+          if (annotation.node) {
+            annotation.node.innerHTML = '';
+
+            annotation.node.append(firstPart);
+            const span = document.createElement('span');
+            span.innerText = secondPart;
+            if (
+              annotation.metaData.type === AnnotationType.highlight ||
+              annotation.metaData.type === AnnotationType.text
+            ) {
+              span.style.background = annotation.backgroundColor!;
+              span.style.position = 'static';
+            } else if (annotation.metaData.type === AnnotationType.underline) {
+              span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
+              span.style.position = 'static';
+            } else {
+              span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
+              span.style.transform = 'translateY(-50%)';
+            }
+
+            annotation.node.append(span);
+            annotation.node.append(thirdPart);
+          }
+        }
+      );
+    });
   }
 
   getNode(nodePath: number[]) {
@@ -83,39 +137,130 @@ export class CPdfViewerComponent implements OnInit {
     //Attempting to highlight multiple selections (for multiple nodes only + Currently removes the formatting)
     const range = userSelection.getRangeAt(0);
     const targetNode = userSelection.anchorNode.parentElement;
-    const node = this.highlightRange(range, targetNode);
-
-    range.deleteContents();
-    range.insertNode(node);
+    const endNode = userSelection.focusNode.parentElement;
+    this.highlightRange(range, targetNode, endNode);
+    userSelection.removeAllRanges();
   }
 
-  highlightRange(range: any, targetNode: any) {
-    //Create the new Node
+  updateStyesOfSelected(
+    range: any,
+    targetNode: any,
+    endNode: any,
+    annotationType: string
+  ) {
+    const startOffset = range.startOffset;
+    const endOffset = range.endOffset;
+    if (targetNode === endNode) {
+      const first = targetNode.innerText.slice(0, startOffset);
+      const second = targetNode.innerText.slice(startOffset, endOffset);
+      const third = targetNode.innerText.slice(
+        endOffset,
+        targetNode.innerText.length
+      );
+
+      this.formatNodeWithContent(
+        targetNode,
+        { first, second, third },
+        annotationType
+      );
+    } else {
+      const middleNodes = this.getInBetweenNodes(targetNode, endNode).map(
+        (path: number[]) => {
+          return this.getNode(path);
+        }
+      );
+      const nodes = [targetNode, ...middleNodes, endNode];
+      const numberOfNodes = nodes.length;
+      nodes.forEach((node, nodeIndex) => {
+        if (nodeIndex === 0) {
+          const first = node.innerText.slice(0, startOffset);
+          const second = node.innerText.slice(
+            startOffset,
+            node.innerText.length
+          );
+          const third = '';
+          this.formatNodeWithContent(
+            node,
+            { first, second, third },
+            annotationType
+          );
+        } else if (nodeIndex === numberOfNodes - 1) {
+          const first = '';
+          const second = node.innerText.slice(0, endOffset);
+          const third = node.innerText.slice(endOffset, node.innerText.length);
+
+          this.formatNodeWithContent(
+            node,
+            { first, second, third },
+            annotationType
+          );
+        } else {
+          const first = '';
+          const second = node.innerText.slice(0, node.innerText.length);
+          const third = '';
+
+          this.formatNodeWithContent(
+            node,
+            { first, second, third },
+            annotationType
+          );
+        }
+      });
+    }
+  }
+
+  formatNodeWithContent(
+    node: any,
+    { first, second, third }: { first: string; second: string; third: string },
+    annotationType: string
+  ) {
+    node.innerText = '';
+    node.append(first);
+    const span = document.createElement('span');
+    span.innerText = second;
+    if (annotationType === 'Highlight' || annotationType === 'Text') {
+      span.style.backgroundColor = this.color;
+    } else if (annotationType === 'Underline') {
+      span.style.borderBottom = `0.2rem solid ${this.color}`;
+    } else if (annotationType === 'Strikeout') {
+      span.style.borderBottom = `0.2rem solid ${this.color}`;
+      span.style.transform = 'translateY(-50%)';
+    }
+
+    node.append(span);
+    node.append(third);
+  }
+
+  highlightRange(range: any, targetNode: any, endNode: any) {
     const newNode = document.createElement('span');
 
-    // Make it highlight
-    newNode.setAttribute('style', `background-color: ${this.color};`);
-
-    //Add Text for replacement (for multiple nodes only)
-    //newNode.innerHTML += range;
     newNode.appendChild(range.cloneContents());
 
-    //Apply Node around selection (used for individual nodes only)
-    //range.surroundContents(newNode);
-    const parentToChild = this.getPath(targetNode);
+    const { pageNumber, path: parentToChild } = this.getPath(targetNode);
+    const { path: parentToChildEndNode } = this.getPath(endNode);
+    const middleNodes = this.getInBetweenNodes(targetNode, endNode);
+
+    const nodes =
+      parentToChild.toString() === parentToChildEndNode.toString()
+        ? [parentToChild]
+        : [parentToChild, ...middleNodes, parentToChildEndNode];
+    const targetText = newNode.innerText;
     const nodeData = {
-      targetNodeParentToChild: parentToChild,
+      pageNumber,
+      targetNodeParentToChild: nodes,
       node: newNode,
       offset: { startOffset: range.startOffset, endOffset: range.endOffset },
       backgroundColor: this.color,
+      targetText,
       metaData: {
+        type: AnnotationType.highlight,
         date: this.getDate(),
         replies: [],
         showReplyInput: false,
       },
     };
     this.annotations.push(nodeData);
-    return newNode;
+    this.updateStyesOfSelected(range, targetNode, endNode, 'Highlight');
   }
 
   saveToStorage() {
@@ -125,12 +270,25 @@ export class CPdfViewerComponent implements OnInit {
   clearStorage() {
     this.annotations = [];
     localStorage.removeItem('annotations');
+    window.location.reload();
   }
 
   getDate() {
     const date = new Date();
+    const time = this.formatAMPM(date);
     const month = this.monthNames[date.getMonth()];
-    return `${month} ${date.getDate()}, ${date.getFullYear()}`;
+    return `${time} ${month} ${date.getDate()}, ${date.getFullYear()}`;
+  }
+
+  formatAMPM(date: any) {
+    let hours = date.getHours();
+    let minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    var strTime = hours + ':' + minutes + ' ' + ampm;
+    return strTime;
   }
 
   deletenode(node: any) {
@@ -139,7 +297,22 @@ export class CPdfViewerComponent implements OnInit {
   }
 
   removeNode(index: number) {
-    this.deletenode(this.annotations[index].node);
+    const nodesPath = this.annotations[index].targetNodeParentToChild;
+    const nodes = nodesPath?.map((nodePath: number[]) =>
+      this.getNode(nodePath)
+    );
+    nodes?.forEach((node: any) => {
+      let innerText = '';
+      node.childNodes.forEach((childNode: any) => {
+        if (childNode.nodeName === '#text') {
+          innerText += childNode.data;
+        } else {
+          innerText += childNode.innerText;
+        }
+      });
+      node.innerHTML = innerText;
+    });
+
     this.annotations.splice(index, 1);
   }
 
@@ -184,8 +357,6 @@ export class CPdfViewerComponent implements OnInit {
   }
 
   editReply(replyIndex: number, annotationIndex: number) {
-    console.log(replyIndex);
-    console.log(annotationIndex);
     this.annotations[annotationIndex].metaData.replies[replyIndex].isEditOpen =
       true;
   }
@@ -223,9 +394,83 @@ export class CPdfViewerComponent implements OnInit {
     ].cloneMessage = changeValue;
   }
 
+  annotateSelection(annotationType: number) {
+    const userSelection: any = window.getSelection();
+    const range = userSelection.getRangeAt(0);
+    const targetNode = userSelection.anchorNode.parentElement;
+    const endNode = userSelection.focusNode.parentElement;
+    this.annotateRange(range, targetNode, annotationType, endNode);
+    userSelection.removeAllRanges();
+  }
+
+  annotateRange(range: Range, targetNode: any, type: number, endNode: any) {
+    const newNode = document.createElement('span');
+    let showComment: boolean = false;
+    let annotationType: string = '';
+
+    if (type == 1) {
+      this.color = this.blackColor;
+      annotationType = AnnotationType.underline;
+      newNode.setAttribute(
+        'style',
+        `border-bottom: 0.2rem solid ${this.color} !important;`
+      );
+    } else if (type == 2) {
+      this.color = this.blackColor;
+      annotationType = AnnotationType.strikeThrough;
+      newNode.style.borderBottom = `0.2rem solid ${this.color}`;
+      newNode.style.transform = 'translateY(-50%)';
+    } else if (type == 3) {
+      annotationType = AnnotationType.text;
+      showComment = true;
+      newNode.setAttribute('style', `background-color: ${this.color};`);
+    }
+
+    newNode.appendChild(range.cloneContents());
+    const { pageNumber, path: parentToChild } = this.getPath(targetNode);
+    const { path: pathToLast } = this.getPath(endNode);
+    const middleNodes = this.getInBetweenNodes(targetNode, endNode);
+    const nodes =
+      targetNode === endNode
+        ? [parentToChild]
+        : [parentToChild, ...middleNodes, pathToLast];
+    const targetText = newNode.innerText;
+
+    const nodeData = {
+      pageNumber,
+      targetNodeParentToChild: nodes,
+      offset: { startOffset: range.startOffset, endOffset: range.endOffset },
+      node: newNode,
+      backgroundColor: this.color,
+      targetText,
+      metaData: {
+        type: annotationType,
+        date: this.getDate(),
+        replies: [],
+        showReplyInput: showComment,
+      },
+    };
+    this.annotations.push(nodeData);
+    this.updateStyesOfSelected(range, targetNode, endNode, annotationType);
+  }
+
+  getInBetweenNodes(targetNode: any, endNode: any) {
+    const middleNodes = [];
+    let current = targetNode.nextSibling;
+    while (current && current !== endNode) {
+      // current = current.nextSibling;
+      if (current.nodeName == 'SPAN') {
+        const { path } = this.getPath(current);
+        middleNodes.push(path);
+      }
+      current = current.nextSibling;
+    }
+    return middleNodes;
+  }
+
   getPath(currentNode: any) {
     const root = document.querySelector('body');
-
+    let pageNumber = '';
     // Getting the node element
 
     // Function to getPath
@@ -243,26 +488,106 @@ export class CPdfViewerComponent implements OnInit {
         const nodeIndex = childrens.indexOf(node); // Check if the actual node is in the childrens array, if yes - then get the position where the node element was founded
 
         path.push(nodeIndex); // Saving the position that the node element was founded into the path array
-
+        if (node.className === 'page') {
+          pageNumber = node.attributes['data-page-number'].value;
+        }
         node = parent; // Now we're moving up so now the current node will be the parent node...and the process will be repeated
       }
 
       return path;
     }
 
-    // Executing the function
     const path = getPath(root, currentNode);
-
-    // Printing final path in the browser
-    console.log('path ---->', path);
-    console.log(`Reversing the path from top to bottom - ${path.reverse()}`);
-    return path;
+    path.reverse();
+    return { path, pageNumber };
   }
 
-  scrollIntoView(annotationId: number) {
-    this.annotations[annotationId].node.scrollIntoView({
+  scrollIntoView(pageNumber: string) {
+    console.log(pageNumber);
+    const page = document.querySelector(`[data-page-number="${pageNumber}"]`)!;
+    page.scrollIntoView({
       behavior: 'smooth',
       block: 'center',
     });
+  }
+
+  getBadgeStyle(annotationType: string) {
+    if (annotationType === 'Highlight') {
+      return 'highlight-btn';
+    } else if (annotationType === 'Text') {
+      return 'annotate-btn';
+    } else if (annotationType === 'Underline') {
+      return 'underline-btn';
+    } else {
+      return 'strikethrough-btn';
+    }
+  }
+
+  extractDataFromAnnotation(
+    annotation: IAnnotation,
+    selectionLineIndex: number,
+    isMultiLine: boolean,
+    numberOfLine: number
+  ) {
+    const def: any = {
+      firstPart: '',
+      secondPart: '',
+      thirdPart: '',
+    };
+    if (!annotation.node) {
+      return def;
+    }
+    if (isMultiLine && selectionLineIndex === 0) {
+      const firstPart = annotation.node.innerText.slice(
+        0,
+        annotation.offset!.startOffset
+      );
+      const secondPart = annotation.node.innerText.slice(
+        annotation.offset!.startOffset,
+        annotation.node.innerText.length
+      );
+      const thirdPart = '';
+      return {
+        firstPart,
+        secondPart,
+        thirdPart,
+      };
+    } else if (isMultiLine && selectionLineIndex === numberOfLine - 1) {
+      const firstPart = '';
+      const secondPart = annotation.node.innerText.slice(
+        0,
+        annotation.offset!.endOffset
+      );
+      const thirdPart = annotation.node.innerText.slice(
+        annotation.offset!.endOffset,
+        annotation.node.innerText.length
+      );
+
+      return { firstPart, secondPart, thirdPart };
+    } else if (numberOfLine === 1) {
+      const firstPart = annotation.node.innerText.slice(
+        0,
+        annotation.offset!.startOffset
+      );
+      const secondPart = annotation.node.innerText.slice(
+        annotation.offset!.startOffset,
+        annotation.offset!.endOffset
+      );
+      const thirdPart = annotation.node.innerText.slice(
+        annotation.offset!.endOffset,
+        annotation.node.innerText.length
+      );
+
+      return { firstPart, secondPart, thirdPart };
+    } else {
+      const firstPart = '';
+      const secondPart = annotation.node.innerText.slice(
+        0,
+        annotation.node.innerText.length
+      );
+      const thirdPart = '';
+
+      return { firstPart, secondPart, thirdPart };
+    }
   }
 }
