@@ -4,6 +4,7 @@ import { fromEvent } from 'rxjs';
 import { switchMap, takeUntil, pairwise } from 'rxjs/operators';
 import { AnnotationType } from '../annotationUtil';
 interface IAnnotation {
+  pageNumber: string;
   targetText: string;
   node: HTMLSpanElement;
   targetNodeParentToChild?: number[][];
@@ -45,7 +46,7 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
   color = 'rgba(255, 255, 0, 1)';
   date = 'Date';
   annotations: IAnnotation[] = [];
-  username = 'Suprabh';
+  username = 'Lorem';
   monthNames = [
     'January',
     'February',
@@ -61,63 +62,16 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
     'December',
   ];
   replyText = '';
-  constructor(private router: ActivatedRoute) {}
+  constructor(private router: ActivatedRoute) {
+    this.annotations = localStorage.getItem('annotations')!
+      ? JSON.parse(localStorage.getItem('annotations')!)
+      : [];
+  }
 
   ngOnInit(): void {
     this.router.queryParams.subscribe((params: Params) => {
       this.pdfSrc = params['pdfURL'] || this.pdfSrc;
     });
-
-    setTimeout(() => {
-      this.modifyTextLayerStyles();
-    }, 1000);
-    if (JSON.parse(localStorage.getItem('annotations')!)) {
-      setTimeout(() => {
-        this.annotations = JSON.parse(localStorage.getItem('annotations')!);
-        this.annotations.forEach((annotation: IAnnotation, index: number) => {
-          const isMultiLine =
-            annotation.targetNodeParentToChild!.length > 1 ? true : false;
-          annotation.targetNodeParentToChild!.forEach(
-            (nodesPath, selectionLineindex) => {
-              const node = this.getNode(nodesPath);
-              annotation.node = node;
-              const { firstPart, secondPart, thirdPart } =
-                this.extractDataFromAnnotation(
-                  annotation,
-                  selectionLineindex,
-                  isMultiLine,
-                  annotation.targetNodeParentToChild!.length
-                );
-              if (annotation.node) {
-                annotation.node.innerHTML = '';
-
-                annotation.node.append(firstPart);
-                const span = document.createElement('span');
-                span.innerText = secondPart;
-                if (
-                  annotation.metaData.type === AnnotationType.highlight ||
-                  annotation.metaData.type === AnnotationType.text
-                ) {
-                  span.style.background = annotation.backgroundColor!;
-                  span.style.position = 'static';
-                } else if (
-                  annotation.metaData.type === AnnotationType.underline
-                ) {
-                  span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
-                  span.style.position = 'static';
-                } else {
-                  span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
-                  span.style.transform = 'translateY(-50%)';
-                }
-
-                annotation.node.append(span);
-                annotation.node.append(thirdPart);
-              }
-            }
-          );
-        });
-      }, 1000);
-    }
   }
 
   public ngAfterViewInit(): void {
@@ -234,6 +188,57 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
       layer.style.opacity = 0.5;
     }
   }
+  textLayerRendered(event: any) {
+    const textLayer = event.source.textLayerDiv;
+    textLayer.style.opacity = 0.5;
+    this.populateAnnotationsOnRenderedPage(event.pageNumber.toString());
+  }
+
+  populateAnnotationsOnRenderedPage(pageNumber: string) {
+    this.annotations.forEach((annotation: IAnnotation, index: number) => {
+      if (annotation.pageNumber !== pageNumber) {
+        return;
+      }
+      const isMultiLine =
+        annotation.targetNodeParentToChild!.length > 1 ? true : false;
+      annotation.targetNodeParentToChild!.forEach(
+        (nodesPath, selectionLineindex) => {
+          const node = this.getNode(nodesPath);
+          annotation.node = node;
+          const { firstPart, secondPart, thirdPart } =
+            this.extractDataFromAnnotation(
+              annotation,
+              selectionLineindex,
+              isMultiLine,
+              annotation.targetNodeParentToChild!.length
+            );
+          if (annotation.node) {
+            annotation.node.innerHTML = '';
+
+            annotation.node.append(firstPart);
+            const span = document.createElement('span');
+            span.innerText = secondPart;
+            if (
+              annotation.metaData.type === AnnotationType.highlight ||
+              annotation.metaData.type === AnnotationType.text
+            ) {
+              span.style.background = annotation.backgroundColor!;
+              span.style.position = 'static';
+            } else if (annotation.metaData.type === AnnotationType.underline) {
+              span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
+              span.style.position = 'static';
+            } else {
+              span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
+              span.style.transform = 'translateY(-50%)';
+            }
+
+            annotation.node.append(span);
+            annotation.node.append(thirdPart);
+          }
+        }
+      );
+    });
+  }
 
   getNode(nodePath: number[]) {
     let parent: any = document.querySelector('body');
@@ -244,8 +249,23 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
     return parent;
   }
 
+  handleSelectionError(userSelection: any) {
+    if (
+      (!userSelection.anchorNode && !userSelection.focusNode) ||
+      (userSelection.anchorNode &&
+        userSelection.anchorNode.nodeName === 'APP-ROOT')
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   highlightSelection() {
     const userSelection: any = window.getSelection();
+    if (this.handleSelectionError(userSelection)) {
+      return;
+    }
     //Attempting to highlight multiple selections (for multiple nodes only + Currently removes the formatting)
     const range = userSelection.getRangeAt(0);
     const targetNode = userSelection.anchorNode.parentElement;
@@ -348,8 +368,8 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
 
     newNode.appendChild(range.cloneContents());
 
-    const parentToChild = this.getPath(targetNode);
-    const parentToChildEndNode = this.getPath(endNode);
+    const { pageNumber, path: parentToChild } = this.getPath(targetNode);
+    const { path: parentToChildEndNode } = this.getPath(endNode);
     const middleNodes = this.getInBetweenNodes(targetNode, endNode);
 
     const nodes =
@@ -358,6 +378,7 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
         : [parentToChild, ...middleNodes, parentToChildEndNode];
     const targetText = newNode.innerText;
     const nodeData = {
+      pageNumber,
       targetNodeParentToChild: nodes,
       node: newNode,
       offset: { startOffset: range.startOffset, endOffset: range.endOffset },
@@ -507,6 +528,9 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
 
   annotateSelection(annotationType: number) {
     const userSelection: any = window.getSelection();
+    if (this.handleSelectionError(userSelection)) {
+      return;
+    }
     const range = userSelection.getRangeAt(0);
     const targetNode = userSelection.anchorNode.parentElement;
     const endNode = userSelection.focusNode.parentElement;
@@ -538,8 +562,8 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
     }
 
     newNode.appendChild(range.cloneContents());
-    const parentToChild = this.getPath(targetNode);
-    const pathToLast = this.getPath(endNode);
+    const { pageNumber, path: parentToChild } = this.getPath(targetNode);
+    const { path: pathToLast } = this.getPath(endNode);
     const middleNodes = this.getInBetweenNodes(targetNode, endNode);
     const nodes =
       targetNode === endNode
@@ -548,6 +572,7 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
     const targetText = newNode.innerText;
 
     const nodeData = {
+      pageNumber,
       targetNodeParentToChild: nodes,
       offset: { startOffset: range.startOffset, endOffset: range.endOffset },
       node: newNode,
@@ -570,7 +595,7 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
     while (current && current !== endNode) {
       // current = current.nextSibling;
       if (current.nodeName == 'SPAN') {
-        const path = this.getPath(current);
+        const { path } = this.getPath(current);
         middleNodes.push(path);
       }
       current = current.nextSibling;
@@ -580,7 +605,7 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
 
   getPath(currentNode: any) {
     const root = document.querySelector('body');
-
+    let pageNumber = '';
     // Getting the node element
 
     // Function to getPath
@@ -598,7 +623,9 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
         const nodeIndex = childrens.indexOf(node); // Check if the actual node is in the childrens array, if yes - then get the position where the node element was founded
 
         path.push(nodeIndex); // Saving the position that the node element was founded into the path array
-
+        if (node.className === 'page') {
+          pageNumber = node.attributes['data-page-number'].value;
+        }
         node = parent; // Now we're moving up so now the current node will be the parent node...and the process will be repeated
       }
 
@@ -607,11 +634,13 @@ export class CPdfViewerComponent implements OnInit, AfterViewInit {
 
     const path = getPath(root, currentNode);
     path.reverse();
-    return path;
+    return { path, pageNumber };
   }
 
-  scrollIntoView(annotationId: number) {
-    this.annotations[annotationId].node.scrollIntoView({
+  scrollIntoView(pageNumber: string) {
+    console.log(pageNumber);
+    const page = document.querySelector(`[data-page-number="${pageNumber}"]`)!;
+    page.scrollIntoView({
       behavior: 'smooth',
       block: 'center',
     });
