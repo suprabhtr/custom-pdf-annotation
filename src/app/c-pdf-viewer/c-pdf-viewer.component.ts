@@ -132,8 +132,23 @@ export class CPdfViewerComponent implements OnInit {
     return parent;
   }
 
+  handleSelectionError(userSelection: any) {
+    if (
+      (!userSelection.anchorNode && !userSelection.focusNode) ||
+      (userSelection.anchorNode &&
+        userSelection.anchorNode.nodeName === 'APP-ROOT')
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   highlightSelection() {
     const userSelection: any = window.getSelection();
+    if (this.handleSelectionError(userSelection)) {
+      return;
+    }
     //Attempting to highlight multiple selections (for multiple nodes only + Currently removes the formatting)
     const range = userSelection.getRangeAt(0);
     const targetNode = userSelection.anchorNode.parentElement;
@@ -396,6 +411,9 @@ export class CPdfViewerComponent implements OnInit {
 
   annotateSelection(annotationType: number) {
     const userSelection: any = window.getSelection();
+    if (this.handleSelectionError(userSelection)) {
+      return;
+    }
     const range = userSelection.getRangeAt(0);
     const targetNode = userSelection.anchorNode.parentElement;
     const endNode = userSelection.focusNode.parentElement;
