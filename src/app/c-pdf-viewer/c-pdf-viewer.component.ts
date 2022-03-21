@@ -112,6 +112,8 @@ export class CPdfViewerComponent implements OnInit {
 
               annotation.node.append(firstPart);
               const span = document.createElement('span');
+              span.setAttribute('annotation-index', index.toString());
+              span.addEventListener('click', this.clickRenderedAnnotation);
               span.innerText = secondPart;
               if (
                 annotation.metaData.type === AnnotationType.highlight ||
@@ -178,7 +180,8 @@ export class CPdfViewerComponent implements OnInit {
     range: any,
     targetNode: any,
     endNode: any,
-    annotationType: string
+    annotationType: string,
+    annotationIndex: number
   ) {
     const startOffset = range.startOffset;
     const endOffset = range.endOffset;
@@ -193,7 +196,8 @@ export class CPdfViewerComponent implements OnInit {
       this.formatNodeWithContent(
         targetNode,
         { first, second, third },
-        annotationType
+        annotationType,
+        annotationIndex
       );
     } else {
       const middleNodes = this.getInBetweenNodes(targetNode, endNode).map(
@@ -214,7 +218,8 @@ export class CPdfViewerComponent implements OnInit {
           this.formatNodeWithContent(
             node,
             { first, second, third },
-            annotationType
+            annotationType,
+            annotationIndex
           );
         } else if (nodeIndex === numberOfNodes - 1) {
           const first = '';
@@ -224,7 +229,8 @@ export class CPdfViewerComponent implements OnInit {
           this.formatNodeWithContent(
             node,
             { first, second, third },
-            annotationType
+            annotationType,
+            annotationIndex
           );
         } else {
           const first = '';
@@ -234,7 +240,8 @@ export class CPdfViewerComponent implements OnInit {
           this.formatNodeWithContent(
             node,
             { first, second, third },
-            annotationType
+            annotationType,
+            annotationIndex
           );
         }
       });
@@ -244,12 +251,15 @@ export class CPdfViewerComponent implements OnInit {
   formatNodeWithContent(
     node: any,
     { first, second, third }: { first: string; second: string; third: string },
-    annotationType: string
+    annotationType: string,
+    annotationIndex: number
   ) {
     node.innerText = '';
     node.append(first);
     const span = document.createElement('span');
     span.innerText = second;
+    span.setAttribute('annotation-index', annotationIndex.toString());
+    span.addEventListener('click', this.clickRenderedAnnotation);
     if (annotationType === 'Highlight' || annotationType === 'Text') {
       span.style.backgroundColor = this.color;
     } else if (annotationType === 'Underline') {
@@ -292,7 +302,14 @@ export class CPdfViewerComponent implements OnInit {
       },
     };
     this.annotations.push(nodeData);
-    this.updateStyesOfSelected(range, targetNode, endNode, 'Highlight');
+    const lastIndex = this.annotations.length - 1;
+    this.updateStyesOfSelected(
+      range,
+      targetNode,
+      endNode,
+      'Highlight',
+      lastIndex
+    );
   }
 
   saveToStorage() {
@@ -495,7 +512,14 @@ export class CPdfViewerComponent implements OnInit {
       },
     };
     this.annotations.push(nodeData);
-    this.updateStyesOfSelected(range, targetNode, endNode, annotationType);
+    const lastIndex = this.annotations.length - 1;
+    this.updateStyesOfSelected(
+      range,
+      targetNode,
+      endNode,
+      annotationType,
+      lastIndex
+    );
   }
 
   getInBetweenNodes(targetNode: any, endNode: any) {
@@ -688,6 +712,25 @@ export class CPdfViewerComponent implements OnInit {
         this.annotations[annotationIndex].metaData.replies[0].message
       );
     });
+    button.addEventListener('click', (buttonEvent: any) => {
+      const annotationIndex =
+        buttonEvent.target.attributes['annotation-index'].value;
+      this.annotationScrollToFocus(annotationIndex);
+    });
     return button;
   }
+
+  annotationScrollToFocus(annotationIndex: number) {
+    const annotationCard = document.querySelector(
+      `.c-pdf-annotated-card[annotation-index="${annotationIndex}"]`
+    );
+    annotationCard?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+  }
+  clickRenderedAnnotation = (e: any) => {
+    const annotationIndex = e?.target.attributes['annotation-index'].value;
+    this.annotationScrollToFocus(annotationIndex);
+  };
 }

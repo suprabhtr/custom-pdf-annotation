@@ -84,6 +84,7 @@
         class="c-pdf-annotated-card"
         *ngFor="let annotation of annotations; let index = index"
         (click)="scrollIntoView(annotation.pageNumber)"
+        [attr.annotation-index]="index"
       >
         <div class="c-pdf-annotated-card-user">
           <div>
