@@ -38,6 +38,12 @@
     >
       Text
     </button>
+    <button
+      class="c-pdf-highlight-btn blank-annotation-btn"
+      (click)="allowToAddText()"
+    >
+      {{ enableFreSpaceText ? "Disable Blank" : "Enable Blank" }}
+    </button>
     <input
       class="c-pdf-color-picker-input"
       [value]="color"
@@ -98,7 +104,7 @@
             >Page No - {{ annotation.pageNumber }}</span
           >
         </div>
-        <div class="c-pdf-annotated-card-body">
+        <div *ngIf="annotation.targetText" class="c-pdf-annotated-card-body">
           <blockquote class="c-pdf-annotated-card-body-blockquote">
             <i>{{ annotation.targetText }}</i>
           </blockquote>
