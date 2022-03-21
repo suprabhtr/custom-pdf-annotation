@@ -522,6 +522,9 @@ export class CPdfViewerComponent implements OnInit {
       annotationType,
       lastIndex
     );
+    if (annotationType === AnnotationType.text) {
+      this.scrollToTheBottomOfSiderbar();
+    }
   }
 
   getInBetweenNodes(targetNode: any, endNode: any) {
@@ -694,6 +697,7 @@ export class CPdfViewerComponent implements OnInit {
           },
         };
         this.annotations.push(annotation);
+        this.scrollToTheBottomOfSiderbar();
       }
     });
   }
@@ -712,7 +716,9 @@ export class CPdfViewerComponent implements OnInit {
         buttonEvent.target.attributes['annotation-index'].value;
       button.setAttribute(
         'title',
-        this.annotations[annotationIndex].metaData.replies[0].message
+        this.annotations[annotationIndex].metaData.replies[0]
+          ? this.annotations[annotationIndex].metaData.replies[0].message
+          : ''
       );
     });
     button.addEventListener('click', (buttonEvent: any) => {
@@ -736,4 +742,12 @@ export class CPdfViewerComponent implements OnInit {
     const annotationIndex = e?.target.attributes['annotation-index'].value;
     this.annotationScrollToFocus(annotationIndex);
   };
+
+  scrollToTheBottomOfSiderbar() {
+    setTimeout(() => {
+      const sidebar = document.querySelector('.c-pdf-annotations-siderbar')!;
+      const scrollHeight = sidebar?.scrollHeight;
+      sidebar?.scrollTo(0, scrollHeight);
+    }, 0);
+  }
 }

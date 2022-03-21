@@ -151,7 +151,20 @@
               </div></ng-template
             >
             <div class="c-annotation-reply-actions">
-              <button (click)="deleteReply(replyIndex, index)">Delete</button>
+              <button
+                *ngIf="annotation.metaData.type !== 'Blank Space'"
+                (click)="deleteReply(replyIndex, index)"
+              >
+                Delete
+              </button>
+              <button
+                *ngIf="
+                  annotation.metaData.type === 'Blank Space' && replyIndex > 0
+                "
+                (click)="deleteReply(replyIndex, index)"
+              >
+                Delete
+              </button>
               <button
                 *ngIf="!reply.isEditOpen"
                 (click)="editReply(replyIndex, index)"
