@@ -149,13 +149,15 @@ export class CPdfViewerComponent implements OnInit {
 
   handleSelectionError(userSelection: any) {
     if (
-      (!userSelection.anchorNode && !userSelection.focusNode) ||
-      (userSelection.anchorNode &&
-        userSelection.anchorNode.nodeName === 'APP-ROOT')
+      userSelection.anchorNode &&
+      userSelection.focusNode &&
+      userSelection.anchorOffset >= 0 &&
+      userSelection.focusOffset &&
+      userSelection.anchorOffset !== userSelection.focusOffset
     ) {
-      return true;
-    } else {
       return false;
+    } else {
+      return true;
     }
   }
 
