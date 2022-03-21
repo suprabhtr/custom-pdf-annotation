@@ -115,6 +115,7 @@ export class CPdfViewerComponent implements OnInit {
               span.setAttribute('annotation-index', index.toString());
               span.addEventListener('click', this.clickRenderedAnnotation);
               span.innerText = secondPart;
+              span.style.cursor = 'pointer';
               if (
                 annotation.metaData.type === AnnotationType.highlight ||
                 annotation.metaData.type === AnnotationType.text
@@ -260,6 +261,7 @@ export class CPdfViewerComponent implements OnInit {
     span.innerText = second;
     span.setAttribute('annotation-index', annotationIndex.toString());
     span.addEventListener('click', this.clickRenderedAnnotation);
+    span.style.cursor = 'pointer';
     if (annotationType === 'Highlight' || annotationType === 'Text') {
       span.style.backgroundColor = this.color;
     } else if (annotationType === 'Underline') {
@@ -704,6 +706,7 @@ export class CPdfViewerComponent implements OnInit {
     button.style.left = `${event.positionLeft}px`;
     button.style.backgroundColor = 'yellow';
     button.style.borderRadius = '6px';
+    button.style.cursor = 'pointer';
     button.addEventListener('mouseover', (buttonEvent: any) => {
       const annotationIndex =
         buttonEvent.target.attributes['annotation-index'].value;
