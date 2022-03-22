@@ -45,6 +45,11 @@
   color: white;
 }
 
+.blank-annotation-btn {
+  background-color: green;
+  color: white;
+}
+
 .annotate-btn {
   background-color: black;
   color: white;

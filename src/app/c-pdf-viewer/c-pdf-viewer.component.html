@@ -38,6 +38,12 @@
     >
       Text
     </button>
+    <button
+      class="c-pdf-highlight-btn blank-annotation-btn"
+      (click)="allowToAddText()"
+    >
+      {{ enableFreSpaceText ? "Disable Blank" : "Enable Blank" }}
+    </button>
     <input
       class="c-pdf-color-picker-input"
       [value]="color"
@@ -78,6 +84,7 @@
         class="c-pdf-annotated-card"
         *ngFor="let annotation of annotations; let index = index"
         (click)="scrollIntoView(annotation.pageNumber)"
+        [attr.annotation-index]="index"
       >
         <div class="c-pdf-annotated-card-user">
           <div>
@@ -98,7 +105,7 @@
             >Page No - {{ annotation.pageNumber }}</span
           >
         </div>
-        <div class="c-pdf-annotated-card-body">
+        <div *ngIf="annotation.targetText" class="c-pdf-annotated-card-body">
           <blockquote class="c-pdf-annotated-card-body-blockquote">
             <i>{{ annotation.targetText }}</i>
           </blockquote>
@@ -144,7 +151,20 @@
               </div></ng-template
             >
             <div class="c-annotation-reply-actions">
-              <button (click)="deleteReply(replyIndex, index)">Delete</button>
+              <button
+                *ngIf="annotation.metaData.type !== 'Blank Space'"
+                (click)="deleteReply(replyIndex, index)"
+              >
+                Delete
+              </button>
+              <button
+                *ngIf="
+                  annotation.metaData.type === 'Blank Space' && replyIndex > 0
+                "
+                (click)="deleteReply(replyIndex, index)"
+              >
+                Delete
+              </button>
               <button
                 *ngIf="!reply.isEditOpen"
                 (click)="editReply(replyIndex, index)"

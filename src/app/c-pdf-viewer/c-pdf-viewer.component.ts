@@ -3,8 +3,8 @@ import { ActivatedRoute, Params } from '@angular/router';
 import { AnnotationType } from '../annotationUtil';
 interface IAnnotation {
   pageNumber: string;
-  targetText: string;
-  node: HTMLSpanElement;
+  targetText?: string;
+  node?: HTMLSpanElement;
   targetNodeParentToChild?: number[][];
   backgroundColor?: string;
   offset?: {
@@ -15,11 +15,6 @@ interface IAnnotation {
     type: string;
     date: string;
     showReplyInput: boolean;
-    // data: {
-    //   firstPart: string;
-    //   middlePart: string;
-    //   lastPart: string;
-    // };
     replies: {
       message: string;
       author: string;
@@ -38,7 +33,7 @@ interface IAnnotation {
 export class CPdfViewerComponent implements OnInit {
   blackColor = 'rgba(0,0,0,1)';
   pdfSrc = 'https://vadimdez.github.io/ng2-pdf-viewer/assets/pdf-test.pdf';
-
+  enableFreSpaceText = false;
   zoom = 0.75;
   color = 'rgba(255, 255, 0, 1)';
   date = 'Date';
@@ -74,52 +69,75 @@ export class CPdfViewerComponent implements OnInit {
   textLayerRendered(event: any) {
     const textLayer = event.source.textLayerDiv;
     textLayer.style.opacity = 0.5;
-    this.populateAnnotationsOnRenderedPage(event.pageNumber.toString());
+    this.populateAnnotationsOnRenderedPage(
+      event.pageNumber.toString(),
+      textLayer
+    );
+    this.attachClickListenerOnThePage(textLayer, event);
   }
 
-  populateAnnotationsOnRenderedPage(pageNumber: string) {
+  populateAnnotationsOnRenderedPage(pageNumber: string, textLayer: any) {
     this.annotations.forEach((annotation: IAnnotation, index: number) => {
       if (annotation.pageNumber !== pageNumber) {
         return;
       }
-      const isMultiLine =
-        annotation.targetNodeParentToChild!.length > 1 ? true : false;
-      annotation.targetNodeParentToChild!.forEach(
-        (nodesPath, selectionLineindex) => {
-          const node = this.getNode(nodesPath);
-          annotation.node = node;
-          const { firstPart, secondPart, thirdPart } =
-            this.extractDataFromAnnotation(
-              annotation,
-              selectionLineindex,
-              isMultiLine,
-              annotation.targetNodeParentToChild!.length
-            );
-          if (annotation.node) {
-            annotation.node.innerHTML = '';
 
-            annotation.node.append(firstPart);
-            const span = document.createElement('span');
-            span.innerText = secondPart;
-            if (
-              annotation.metaData.type === AnnotationType.highlight ||
-              annotation.metaData.type === AnnotationType.text
-            ) {
-              span.style.background = annotation.backgroundColor!;
-              span.style.position = 'static';
-            } else if (annotation.metaData.type === AnnotationType.underline) {
-              span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
-              span.style.position = 'static';
-            } else {
-              span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
-              span.style.transform = 'translateY(-50%)';
+      if (annotation.metaData.type === 'Blank Space') {
+        console.log(
+          'Blank space annotation found of page ',
+          annotation.pageNumber
+        );
+        const button = this.createButtonForBlankSpace({
+          positionTop: annotation.offset?.startOffset,
+          positionLeft: annotation.offset?.endOffset,
+        });
+        button.setAttribute('annotation-index', index.toString());
+        textLayer.append(button);
+      } else {
+        const isMultiLine =
+          annotation.targetNodeParentToChild!.length > 1 ? true : false;
+        annotation.targetNodeParentToChild!.forEach(
+          (nodesPath, selectionLineindex) => {
+            const node = this.getNode(nodesPath);
+            annotation.node = node;
+            const { firstPart, secondPart, thirdPart } =
+              this.extractDataFromAnnotation(
+                annotation,
+                selectionLineindex,
+                isMultiLine,
+                annotation.targetNodeParentToChild!.length
+              );
+            if (annotation.node) {
+              annotation.node.innerHTML = '';
+
+              annotation.node.append(firstPart);
+              const span = document.createElement('span');
+              span.setAttribute('annotation-index', index.toString());
+              span.addEventListener('click', this.clickRenderedAnnotation);
+              span.innerText = secondPart;
+              span.style.cursor = 'pointer';
+              if (
+                annotation.metaData.type === AnnotationType.highlight ||
+                annotation.metaData.type === AnnotationType.text
+              ) {
+                span.style.background = annotation.backgroundColor!;
+                span.style.position = 'static';
+              } else if (
+                annotation.metaData.type === AnnotationType.underline
+              ) {
+                span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
+                span.style.position = 'static';
+              } else {
+                span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
+                span.style.transform = 'translateY(-50%)';
+              }
+
+              annotation.node.append(span);
+              annotation.node.append(thirdPart);
             }
-
-            annotation.node.append(span);
-            annotation.node.append(thirdPart);
           }
-        }
-      );
+        );
+      }
     });
   }
 
@@ -163,7 +181,8 @@ export class CPdfViewerComponent implements OnInit {
     range: any,
     targetNode: any,
     endNode: any,
-    annotationType: string
+    annotationType: string,
+    annotationIndex: number
   ) {
     const startOffset = range.startOffset;
     const endOffset = range.endOffset;
@@ -178,7 +197,8 @@ export class CPdfViewerComponent implements OnInit {
       this.formatNodeWithContent(
         targetNode,
         { first, second, third },
-        annotationType
+        annotationType,
+        annotationIndex
       );
     } else {
       const middleNodes = this.getInBetweenNodes(targetNode, endNode).map(
@@ -199,7 +219,8 @@ export class CPdfViewerComponent implements OnInit {
           this.formatNodeWithContent(
             node,
             { first, second, third },
-            annotationType
+            annotationType,
+            annotationIndex
           );
         } else if (nodeIndex === numberOfNodes - 1) {
           const first = '';
@@ -209,7 +230,8 @@ export class CPdfViewerComponent implements OnInit {
           this.formatNodeWithContent(
             node,
             { first, second, third },
-            annotationType
+            annotationType,
+            annotationIndex
           );
         } else {
           const first = '';
@@ -219,7 +241,8 @@ export class CPdfViewerComponent implements OnInit {
           this.formatNodeWithContent(
             node,
             { first, second, third },
-            annotationType
+            annotationType,
+            annotationIndex
           );
         }
       });
@@ -229,12 +252,16 @@ export class CPdfViewerComponent implements OnInit {
   formatNodeWithContent(
     node: any,
     { first, second, third }: { first: string; second: string; third: string },
-    annotationType: string
+    annotationType: string,
+    annotationIndex: number
   ) {
     node.innerText = '';
     node.append(first);
     const span = document.createElement('span');
     span.innerText = second;
+    span.setAttribute('annotation-index', annotationIndex.toString());
+    span.addEventListener('click', this.clickRenderedAnnotation);
+    span.style.cursor = 'pointer';
     if (annotationType === 'Highlight' || annotationType === 'Text') {
       span.style.backgroundColor = this.color;
     } else if (annotationType === 'Underline') {
@@ -277,7 +304,14 @@ export class CPdfViewerComponent implements OnInit {
       },
     };
     this.annotations.push(nodeData);
-    this.updateStyesOfSelected(range, targetNode, endNode, 'Highlight');
+    const lastIndex = this.annotations.length - 1;
+    this.updateStyesOfSelected(
+      range,
+      targetNode,
+      endNode,
+      'Highlight',
+      lastIndex
+    );
   }
 
   saveToStorage() {
@@ -314,21 +348,30 @@ export class CPdfViewerComponent implements OnInit {
   }
 
   removeNode(index: number) {
-    const nodesPath = this.annotations[index].targetNodeParentToChild;
-    const nodes = nodesPath?.map((nodePath: number[]) =>
-      this.getNode(nodePath)
-    );
-    nodes?.forEach((node: any) => {
-      let innerText = '';
-      node.childNodes.forEach((childNode: any) => {
-        if (childNode.nodeName === '#text') {
-          innerText += childNode.data;
-        } else {
-          innerText += childNode.innerText;
-        }
+    if (this.annotations[index].metaData.type === 'Blank Space') {
+      const page = this.annotations[index].pageNumber;
+      const targetPage = document.querySelector(`[data-page-number='${page}']`);
+      const blankAnnotation = targetPage?.querySelector(
+        `[annotation-index='${index}']`
+      );
+      blankAnnotation?.remove();
+    } else {
+      const nodesPath = this.annotations[index].targetNodeParentToChild;
+      const nodes = nodesPath?.map((nodePath: number[]) =>
+        this.getNode(nodePath)
+      );
+      nodes?.forEach((node: any) => {
+        let innerText = '';
+        node.childNodes.forEach((childNode: any) => {
+          if (childNode.nodeName === '#text') {
+            innerText += childNode.data;
+          } else {
+            innerText += childNode.innerText;
+          }
+        });
+        node.innerHTML = innerText;
       });
-      node.innerHTML = innerText;
-    });
+    }
 
     this.annotations.splice(index, 1);
   }
@@ -471,7 +514,17 @@ export class CPdfViewerComponent implements OnInit {
       },
     };
     this.annotations.push(nodeData);
-    this.updateStyesOfSelected(range, targetNode, endNode, annotationType);
+    const lastIndex = this.annotations.length - 1;
+    this.updateStyesOfSelected(
+      range,
+      targetNode,
+      endNode,
+      annotationType,
+      lastIndex
+    );
+    if (annotationType === AnnotationType.text) {
+      this.scrollToTheBottomOfSiderbar();
+    }
   }
 
   getInBetweenNodes(targetNode: any, endNode: any) {
@@ -538,8 +591,10 @@ export class CPdfViewerComponent implements OnInit {
       return 'annotate-btn';
     } else if (annotationType === 'Underline') {
       return 'underline-btn';
-    } else {
+    } else if (annotationType === 'Strikeout') {
       return 'strikethrough-btn';
+    } else {
+      return 'blank-annotation-btn';
     }
   }
 
@@ -609,5 +664,90 @@ export class CPdfViewerComponent implements OnInit {
 
       return { firstPart, secondPart, thirdPart };
     }
+  }
+
+  allowToAddText() {
+    this.enableFreSpaceText = !this.enableFreSpaceText;
+  }
+  attachClickListenerOnThePage(textLayer: any, page: any) {
+    textLayer.addEventListener('click', (event: any) => {
+      if (this.enableFreSpaceText) {
+        const button = this.createButtonForBlankSpace({
+          positionTop: event.layerY,
+          positionLeft: event.layerX,
+        });
+        button.setAttribute(
+          'annotation-index',
+          this.annotations.length.toString()
+        );
+        textLayer.append(button);
+        this.enableFreSpaceText = false;
+        const annotation: IAnnotation = {
+          pageNumber: page.pageNumber.toString(),
+          targetText: '',
+          offset: {
+            startOffset: event.layerY,
+            endOffset: event.layerX,
+          },
+          metaData: {
+            type: 'Blank Space',
+            date: this.getDate(),
+            showReplyInput: true,
+            replies: [],
+          },
+        };
+        this.annotations.push(annotation);
+        this.scrollToTheBottomOfSiderbar();
+      }
+    });
+  }
+  createButtonForBlankSpace(event: any) {
+    const button = document.createElement('button');
+    button.innerText = 'Text';
+    button.style.padding = '5px';
+    button.style.position = 'absolute';
+    button.style.top = `${event.positionTop}px`;
+    button.style.left = `${event.positionLeft}px`;
+    button.style.backgroundColor = 'yellow';
+    button.style.borderRadius = '6px';
+    button.style.cursor = 'pointer';
+    button.addEventListener('mouseover', (buttonEvent: any) => {
+      const annotationIndex =
+        buttonEvent.target.attributes['annotation-index'].value;
+      button.setAttribute(
+        'title',
+        this.annotations[annotationIndex].metaData.replies[0]
+          ? this.annotations[annotationIndex].metaData.replies[0].message
+          : ''
+      );
+    });
+    button.addEventListener('click', (buttonEvent: any) => {
+      const annotationIndex =
+        buttonEvent.target.attributes['annotation-index'].value;
+      this.annotationScrollToFocus(annotationIndex);
+    });
+    return button;
+  }
+
+  annotationScrollToFocus(annotationIndex: number) {
+    const annotationCard = document.querySelector(
+      `.c-pdf-annotated-card[annotation-index="${annotationIndex}"]`
+    );
+    annotationCard?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+  }
+  clickRenderedAnnotation = (e: any) => {
+    const annotationIndex = e?.target.attributes['annotation-index'].value;
+    this.annotationScrollToFocus(annotationIndex);
+  };
+
+  scrollToTheBottomOfSiderbar() {
+    setTimeout(() => {
+      const sidebar = document.querySelector('.c-pdf-annotations-siderbar')!;
+      const scrollHeight = sidebar?.scrollHeight;
+      sidebar?.scrollTo(0, scrollHeight);
+    }, 0);
   }
 }
