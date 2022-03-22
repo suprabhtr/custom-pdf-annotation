@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
+import { v4 as UUID } from 'uuid';
 import { AnnotationType } from '../annotationUtil';
 interface IAnnotation {
+  uuid: string;
   pageNumber: string;
   targetText?: string;
   node?: HTMLSpanElement;
@@ -91,7 +93,7 @@ export class CPdfViewerComponent implements OnInit {
           positionTop: annotation.offset?.startOffset,
           positionLeft: annotation.offset?.endOffset,
         });
-        button.setAttribute('annotation-index', index.toString());
+        button.setAttribute('annotation-index', annotation.uuid);
         textLayer.append(button);
       } else {
         const isMultiLine =
@@ -112,7 +114,7 @@ export class CPdfViewerComponent implements OnInit {
 
               annotation.node.append(firstPart);
               const span = document.createElement('span');
-              span.setAttribute('annotation-index', index.toString());
+              span.setAttribute('annotation-index', annotation.uuid);
               span.addEventListener('click', this.clickRenderedAnnotation);
               span.innerText = secondPart;
               span.style.cursor = 'pointer';
@@ -182,7 +184,8 @@ export class CPdfViewerComponent implements OnInit {
     targetNode: any,
     endNode: any,
     annotationType: string,
-    annotationIndex: number
+    annotationIndex: number,
+    uuid: string
   ) {
     const startOffset = range.startOffset;
     const endOffset = range.endOffset;
@@ -198,7 +201,8 @@ export class CPdfViewerComponent implements OnInit {
         targetNode,
         { first, second, third },
         annotationType,
-        annotationIndex
+        annotationIndex,
+        uuid
       );
     } else {
       const middleNodes = this.getInBetweenNodes(targetNode, endNode).map(
@@ -220,7 +224,8 @@ export class CPdfViewerComponent implements OnInit {
             node,
             { first, second, third },
             annotationType,
-            annotationIndex
+            annotationIndex,
+            uuid
           );
         } else if (nodeIndex === numberOfNodes - 1) {
           const first = '';
@@ -231,7 +236,8 @@ export class CPdfViewerComponent implements OnInit {
             node,
             { first, second, third },
             annotationType,
-            annotationIndex
+            annotationIndex,
+            uuid
           );
         } else {
           const first = '';
@@ -242,7 +248,8 @@ export class CPdfViewerComponent implements OnInit {
             node,
             { first, second, third },
             annotationType,
-            annotationIndex
+            annotationIndex,
+            uuid
           );
         }
       });
@@ -253,13 +260,14 @@ export class CPdfViewerComponent implements OnInit {
     node: any,
     { first, second, third }: { first: string; second: string; third: string },
     annotationType: string,
-    annotationIndex: number
+    annotationIndex: number,
+    uuid: string
   ) {
     node.innerText = '';
     node.append(first);
     const span = document.createElement('span');
     span.innerText = second;
-    span.setAttribute('annotation-index', annotationIndex.toString());
+    span.setAttribute('annotation-index', uuid);
     span.addEventListener('click', this.clickRenderedAnnotation);
     span.style.cursor = 'pointer';
     if (annotationType === 'Highlight' || annotationType === 'Text') {
@@ -277,7 +285,7 @@ export class CPdfViewerComponent implements OnInit {
 
   highlightRange(range: any, targetNode: any, endNode: any) {
     const newNode = document.createElement('span');
-
+    const uuid = UUID();
     newNode.appendChild(range.cloneContents());
 
     const { pageNumber, path: parentToChild } = this.getPath(targetNode);
@@ -290,6 +298,7 @@ export class CPdfViewerComponent implements OnInit {
         : [parentToChild, ...middleNodes, parentToChildEndNode];
     const targetText = newNode.innerText;
     const nodeData = {
+      uuid,
       pageNumber,
       targetNodeParentToChild: nodes,
       node: newNode,
@@ -310,7 +319,8 @@ export class CPdfViewerComponent implements OnInit {
       targetNode,
       endNode,
       'Highlight',
-      lastIndex
+      lastIndex,
+      uuid
     );
   }
 
@@ -347,52 +357,70 @@ export class CPdfViewerComponent implements OnInit {
     node.parentNode.replaceChild(contents, node);
   }
 
-  removeNode(index: number) {
-    if (this.annotations[index].metaData.type === 'Blank Space') {
-      const page = this.annotations[index].pageNumber;
-      const targetPage = document.querySelector(`[data-page-number='${page}']`);
-      const blankAnnotation = targetPage?.querySelector(
-        `[annotation-index='${index}']`
-      );
-      blankAnnotation?.remove();
+  removeNode(uuid: string) {
+    const index = this.annotations.findIndex(
+      (annotation: IAnnotation) => annotation.uuid === uuid
+    );
+    if (index < 0) {
+      return;
     } else {
-      const nodesPath = this.annotations[index].targetNodeParentToChild;
-      const nodes = nodesPath?.map((nodePath: number[]) =>
-        this.getNode(nodePath)
-      );
-      nodes?.forEach((node: any) => {
-        let innerText = '';
-        node.childNodes.forEach((childNode: any) => {
-          if (childNode.nodeName === '#text') {
-            innerText += childNode.data;
-          } else {
-            innerText += childNode.innerText;
-          }
+      if (this.annotations[index].metaData.type === 'Blank Space') {
+        const page = this.annotations[index].pageNumber;
+        const targetPage = document.querySelector(
+          `[data-page-number='${page}']`
+        );
+        const blankAnnotation = targetPage?.querySelector(
+          `[annotation-index='${uuid}']`
+        );
+        blankAnnotation?.remove();
+      } else {
+        const nodesPath = this.annotations[index].targetNodeParentToChild;
+        const nodes = nodesPath?.map((nodePath: number[]) =>
+          this.getNode(nodePath)
+        );
+        nodes?.forEach((node: any) => {
+          let innerText = '';
+          node.childNodes.forEach((childNode: any) => {
+            if (childNode.nodeName === '#text') {
+              innerText += childNode.data;
+            } else {
+              innerText += childNode.innerText;
+            }
+          });
+          node.innerHTML = innerText;
         });
-        node.innerHTML = innerText;
-      });
+      }
     }
 
     this.annotations.splice(index, 1);
   }
 
-  replyBtn(index: number) {
+  replyBtn(annotationUUID: string) {
     // add the text area with button and cancel action.
-    this.annotations[index].metaData['showReplyInput'] = true;
+    const annotation = this.annotations.find(
+      (annotation: IAnnotation) => annotation.uuid === annotationUUID
+    )!;
+    annotation.metaData['showReplyInput'] = true;
   }
 
-  cancelReply(index: number) {
-    this.annotations[index].metaData['showReplyInput'] = false;
+  cancelReply(annotationUUID: string) {
+    const annotation = this.annotations.find(
+      (annotation: IAnnotation) => annotation.uuid === annotationUUID
+    )!;
+    annotation.metaData['showReplyInput'] = false;
     this.replyText = '';
   }
 
-  addReply(index: number) {
-    this.annotations[index].metaData['showReplyInput'] = false;
-    const replies = this.annotations[index].metaData['replies'];
+  addReply(annotationUUID: string) {
+    const annotation = this.annotations.find(
+      (annotation: IAnnotation) => annotation.uuid === annotationUUID
+    )!;
+    annotation.metaData['showReplyInput'] = false;
+    const replies = annotation.metaData['replies'];
     const message = this.replyText;
 
     if (replies && Array.isArray(replies) && replies.length > 0) {
-      this.annotations[index].metaData['replies'].push({
+      annotation.metaData['replies'].push({
         message,
         author: this.username,
         repliedOn: this.getDate(),
@@ -400,7 +428,7 @@ export class CPdfViewerComponent implements OnInit {
         cloneMessage: message,
       });
     } else {
-      this.annotations[index].metaData['replies'] = [
+      annotation.metaData['replies'] = [
         {
           message,
           author: this.username,
@@ -416,42 +444,48 @@ export class CPdfViewerComponent implements OnInit {
     this.replyText = value;
   }
 
-  editReply(replyIndex: number, annotationIndex: number) {
-    this.annotations[annotationIndex].metaData.replies[replyIndex].isEditOpen =
-      true;
+  editReply(replyIndex: number, annotationUUID: string) {
+    const annotation = this.annotations.find(
+      (annotation: IAnnotation) => annotation.uuid === annotationUUID
+    )!;
+    annotation.metaData.replies[replyIndex].isEditOpen = true;
   }
 
-  deleteReply(replyIndex: number, annotationIndex: number) {
-    this.annotations[annotationIndex].metaData.replies.splice(replyIndex, 1);
+  deleteReply(replyIndex: number, annotationUUID: string) {
+    const annotation = this.annotations.find(
+      (annotation: IAnnotation) => annotation.uuid === annotationUUID
+    )!;
+    annotation.metaData.replies.splice(replyIndex, 1);
   }
 
-  cancelReplyEdit(replyIndex: number, annotationIndex: number) {
-    this.annotations[annotationIndex].metaData.replies[replyIndex].isEditOpen =
-      false;
+  cancelReplyEdit(replyIndex: number, annotationUUID: string) {
+    const annotation = this.annotations.find(
+      (annotation: IAnnotation) => annotation.uuid === annotationUUID
+    )!;
+    annotation.metaData.replies[replyIndex].isEditOpen = false;
 
-    this.annotations[annotationIndex].metaData.replies[
-      replyIndex
-    ].cloneMessage =
-      this.annotations[annotationIndex].metaData.replies[replyIndex].message;
+    annotation.metaData.replies[replyIndex].cloneMessage =
+      annotation.metaData.replies[replyIndex].message;
   }
 
-  updateReply(replyIndex: number, annotationIndex: number) {
-    this.annotations[annotationIndex].metaData.replies[replyIndex].isEditOpen =
-      false;
-    this.annotations[annotationIndex].metaData.replies[replyIndex].message =
-      this.annotations[annotationIndex].metaData.replies[
-        replyIndex
-      ].cloneMessage;
+  updateReply(replyIndex: number, annotationUUID: string) {
+    const annotation = this.annotations.find(
+      (annotation: IAnnotation) => annotation.uuid === annotationUUID
+    )!;
+    annotation.metaData.replies[replyIndex].isEditOpen = false;
+    annotation.metaData.replies[replyIndex].message =
+      annotation.metaData.replies[replyIndex].cloneMessage;
   }
 
   handleReplyEdit(
     changeValue: string,
     replyIndex: number,
-    annotationIndex: number
+    annotationUUID: string
   ) {
-    this.annotations[annotationIndex].metaData.replies[
-      replyIndex
-    ].cloneMessage = changeValue;
+    const annotation = this.annotations.find(
+      (annotation: IAnnotation) => annotation.uuid === annotationUUID
+    )!;
+    annotation.metaData.replies[replyIndex].cloneMessage = changeValue;
   }
 
   annotateSelection(annotationType: number) {
@@ -498,8 +532,9 @@ export class CPdfViewerComponent implements OnInit {
         ? [parentToChild]
         : [parentToChild, ...middleNodes, pathToLast];
     const targetText = newNode.innerText;
-
+    const uuid = UUID();
     const nodeData = {
+      uuid,
       pageNumber,
       targetNodeParentToChild: nodes,
       offset: { startOffset: range.startOffset, endOffset: range.endOffset },
@@ -520,7 +555,8 @@ export class CPdfViewerComponent implements OnInit {
       targetNode,
       endNode,
       annotationType,
-      lastIndex
+      lastIndex,
+      uuid
     );
     if (annotationType === AnnotationType.text) {
       this.scrollToTheBottomOfSiderbar();
@@ -672,17 +708,16 @@ export class CPdfViewerComponent implements OnInit {
   attachClickListenerOnThePage(textLayer: any, page: any) {
     textLayer.addEventListener('click', (event: any) => {
       if (this.enableFreSpaceText) {
+        const uuid = UUID();
         const button = this.createButtonForBlankSpace({
           positionTop: event.layerY,
           positionLeft: event.layerX,
         });
-        button.setAttribute(
-          'annotation-index',
-          this.annotations.length.toString()
-        );
+        button.setAttribute('annotation-index', uuid);
         textLayer.append(button);
         this.enableFreSpaceText = false;
         const annotation: IAnnotation = {
+          uuid,
           pageNumber: page.pageNumber.toString(),
           targetText: '',
           offset: {
@@ -712,12 +747,14 @@ export class CPdfViewerComponent implements OnInit {
     button.style.borderRadius = '6px';
     button.style.cursor = 'pointer';
     button.addEventListener('mouseover', (buttonEvent: any) => {
-      const annotationIndex =
-        buttonEvent.target.attributes['annotation-index'].value;
+      const uuid = buttonEvent.target.attributes['annotation-index'].value;
+      const annotation = this.annotations.find(
+        (annotation: IAnnotation) => annotation.uuid === uuid
+      )!;
       button.setAttribute(
         'title',
-        this.annotations[annotationIndex].metaData.replies[0]
-          ? this.annotations[annotationIndex].metaData.replies[0].message
+        annotation.metaData.replies[0]
+          ? annotation.metaData.replies[0].message
           : ''
       );
     });
@@ -729,7 +766,7 @@ export class CPdfViewerComponent implements OnInit {
     return button;
   }
 
-  annotationScrollToFocus(annotationIndex: number) {
+  annotationScrollToFocus(annotationIndex: string) {
     const annotationCard = document.querySelector(
       `.c-pdf-annotated-card[annotation-index="${annotationIndex}"]`
     );

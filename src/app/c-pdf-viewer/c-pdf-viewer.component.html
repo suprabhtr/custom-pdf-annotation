@@ -82,9 +82,9 @@
     <div *ngIf="annotations.length > 0; else noAnnotation">
       <div
         class="c-pdf-annotated-card"
-        *ngFor="let annotation of annotations; let index = index"
+        *ngFor="let annotation of annotations"
         (click)="scrollIntoView(annotation.pageNumber)"
-        [attr.annotation-index]="index"
+        [attr.annotation-index]="annotation.uuid"
       >
         <div class="c-pdf-annotated-card-user">
           <div>
@@ -139,12 +139,16 @@
                   rows="3"
                   style="width: 98%"
                   [ngModel]="reply.cloneMessage"
-                  (ngModelChange)="handleReplyEdit($event, replyIndex, index)"
+                  (ngModelChange)="
+                    handleReplyEdit($event, replyIndex, annotation.uuid)
+                  "
                 ></textarea>
                 <div class="c-annotation-reply-actions">
-                  <button (click)="cancelReplyEdit(replyIndex, index)">
+                  <button
+                    (click)="cancelReplyEdit(replyIndex, annotation.uuid)"
+                  >
                     Cancel</button
-                  ><button (click)="updateReply(replyIndex, index)">
+                  ><button (click)="updateReply(replyIndex, annotation.uuid)">
                     Update Reply
                   </button>
                 </div>
@@ -153,7 +157,7 @@
             <div class="c-annotation-reply-actions">
               <button
                 *ngIf="annotation.metaData.type !== 'Blank Space'"
-                (click)="deleteReply(replyIndex, index)"
+                (click)="deleteReply(replyIndex, annotation.uuid)"
               >
                 Delete
               </button>
@@ -161,13 +165,13 @@
                 *ngIf="
                   annotation.metaData.type === 'Blank Space' && replyIndex > 0
                 "
-                (click)="deleteReply(replyIndex, index)"
+                (click)="deleteReply(replyIndex, annotation.uuid)"
               >
                 Delete
               </button>
               <button
                 *ngIf="!reply.isEditOpen"
-                (click)="editReply(replyIndex, index)"
+                (click)="editReply(replyIndex, annotation.uuid)"
               >
                 Edit
               </button>
@@ -185,14 +189,20 @@
             (ngModelChange)="handleReplyChange($event)"
           ></textarea>
           <div class="c-annotation-reply-actions">
-            <button (click)="cancelReply(index)">Cancel</button>
-            <button (click)="addReply(index)">Add reply</button>
+            <button (click)="cancelReply(annotation.uuid)">Cancel</button>
+            <button (click)="addReply(annotation.uuid)">Add reply</button>
           </div>
         </div>
-        <button class="c-pdf-annotated-card-delete" (click)="removeNode(index)">
+        <button
+          class="c-pdf-annotated-card-delete"
+          (click)="removeNode(annotation.uuid)"
+        >
           Delete
         </button>
-        <button class="c-pdf-annotated-card-reply" (click)="replyBtn(index)">
+        <button
+          class="c-pdf-annotated-card-reply"
+          (click)="replyBtn(annotation.uuid)"
+        >
           Reply
         </button>
       </div>
