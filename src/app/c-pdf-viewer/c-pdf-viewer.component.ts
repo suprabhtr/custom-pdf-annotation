@@ -71,6 +71,7 @@ export class CPdfViewerComponent implements OnInit {
   textLayerRendered(event: any) {
     const textLayer = event.source.textLayerDiv;
     textLayer.style.opacity = 0.5;
+    textLayer.style.border = "1px solid black"
     this.populateAnnotationsOnRenderedPage(
       event.pageNumber.toString(),
       textLayer
@@ -614,10 +615,7 @@ export class CPdfViewerComponent implements OnInit {
   scrollIntoView(pageNumber: string) {
     console.log(pageNumber);
     const page = document.querySelector(`[data-page-number="${pageNumber}"]`)!;
-    page.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-    });
+    page.scrollIntoView();
   }
 
   getBadgeStyle(annotationType: string) {
@@ -786,5 +784,19 @@ export class CPdfViewerComponent implements OnInit {
       const scrollHeight = sidebar?.scrollHeight;
       sidebar?.scrollTo(0, scrollHeight);
     }, 0);
+  }
+
+  onFileSelected() {
+    let $img: any = document.querySelector('#file');
+
+    if (typeof (FileReader) !== 'undefined') {
+      let reader = new FileReader();
+
+      reader.onload = (e: any) => {
+        this.pdfSrc = e.target.result;
+      };
+
+      reader.readAsArrayBuffer($img.files[0]);
+    }
   }
 }

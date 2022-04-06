@@ -13,4 +13,7 @@ export class AppComponent {
     localStorage.clear();
     this.router.navigate(['']);
   }
+  loadLocalPDF(){
+    this.router.navigate(["annotator"])
+  }
 }
