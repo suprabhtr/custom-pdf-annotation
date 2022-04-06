@@ -36,6 +36,7 @@ export class CPdfViewerComponent implements OnInit {
   blackColor = 'rgba(0,0,0,1)';
   pdfSrc = 'https://vadimdez.github.io/ng2-pdf-viewer/assets/pdf-test.pdf';
   enableFreSpaceText = false;
+  enableStamp = false;
   zoom = 0.75;
   color = 'rgba(255, 255, 0, 1)';
   date = 'Date';
@@ -364,7 +365,7 @@ export class CPdfViewerComponent implements OnInit {
     if (index < 0) {
       return;
     } else {
-      if (this.annotations[index].metaData.type === 'Blank Space') {
+      if (this.annotations[index].metaData.type === 'Blank Space' || this.annotations[index].metaData.type === AnnotationType.stamp) {
         const page = this.annotations[index].pageNumber;
         const targetPage = document.querySelector(
           `[data-page-number='${page}']`
@@ -707,30 +708,55 @@ export class CPdfViewerComponent implements OnInit {
   }
   attachClickListenerOnThePage(textLayer: any, page: any) {
     textLayer.addEventListener('click', (event: any) => {
-      if (this.enableFreSpaceText) {
+      if (this.enableFreSpaceText || this.enableStamp) {
         const uuid = UUID();
-        const button = this.createButtonForBlankSpace({
-          positionTop: event.layerY,
-          positionLeft: event.layerX,
-        });
-        button.setAttribute('annotation-index', uuid);
-        textLayer.append(button);
+        let element, annotation;
+
+        if(this.enableFreSpaceText){
+          element = this.createButtonForBlankSpace({
+            positionTop: event.layerY,
+            positionLeft: event.layerX,
+          });
+          annotation = {
+            uuid,
+            pageNumber: page.pageNumber.toString(),
+            targetText: '',
+            offset: {
+              startOffset: event.layerY,
+              endOffset: event.layerX,
+            },
+            metaData: {
+              type: 'Blank Space',
+              date: this.getDate(),
+              showReplyInput: true,
+              replies: [],
+            },
+          };
+        }
+        else{
+          element = this.createStamp({
+            positionTop: event.layerY,
+            positionLeft: event.layerX,
+          });
+          annotation = {
+            uuid,
+            pageNumber: page.pageNumber.toString(),
+            targetText: '',
+            offset: {
+              startOffset: event.layerY,
+              endOffset: event.layerX,
+            },
+            metaData: {
+              type: 'Stamp',
+              date: this.getDate(),
+              showReplyInput: false,
+              replies: [],
+            },
+          };
+        }
+        element.setAttribute('annotation-index', uuid);
+        textLayer.append(element);
         this.enableFreSpaceText = false;
-        const annotation: IAnnotation = {
-          uuid,
-          pageNumber: page.pageNumber.toString(),
-          targetText: '',
-          offset: {
-            startOffset: event.layerY,
-            endOffset: event.layerX,
-          },
-          metaData: {
-            type: 'Blank Space',
-            date: this.getDate(),
-            showReplyInput: true,
-            replies: [],
-          },
-        };
         this.annotations.push(annotation);
         this.scrollToTheBottomOfSiderbar();
       }
@@ -786,5 +812,39 @@ export class CPdfViewerComponent implements OnInit {
       const scrollHeight = sidebar?.scrollHeight;
       sidebar?.scrollTo(0, scrollHeight);
     }, 0);
+  }
+
+  addStamp(){
+    this.enableStamp = !this.enableStamp;
+  }
+
+  createStamp(event: any) {
+    const button = document.createElement('div');
+    button.innerHTML = '<h1>Reviewed</h1><br>by '+this.username;
+    button.style.padding = '5px';
+    button.style.position = 'absolute';
+    button.style.top = `${event.positionTop}px`;
+    button.style.left = `${event.positionLeft}px`;
+    button.style.backgroundColor = 'yellow';
+    button.style.borderRadius = '6px';
+    button.style.cursor = 'pointer';
+    button.addEventListener('mouseover', (buttonEvent: any) => {
+      const uuid = buttonEvent.target.attributes['annotation-index'].value;
+      const annotation = this.annotations.find(
+        (annotation: IAnnotation) => annotation.uuid === uuid
+      )!;
+      button.setAttribute(
+        'title',
+        annotation.metaData.replies[0]
+          ? annotation.metaData.replies[0].message
+          : ''
+      );
+    });
+    button.addEventListener('click', (buttonEvent: any) => {
+      const annotationIndex =
+        buttonEvent.target.attributes['annotation-index'].value;
+      this.annotationScrollToFocus(annotationIndex);
+    });
+    return button;
   }
 }

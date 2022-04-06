@@ -39,6 +39,13 @@
       Text
     </button>
     <button
+    class="c-pdf-highlight-btn annotate-btn"
+    (click)="addStamp()"
+    [ngStyle]="{'background-color': enableStamp ? 'red' : 'cornflowerblue' }"
+    >
+    {{ enableStamp ? "Disable Stamp" : "Enable Stamp" }}
+    </button>
+    <button
       class="c-pdf-highlight-btn blank-annotation-btn"
       (click)="allowToAddText()"
     >
@@ -193,6 +200,7 @@
             <button (click)="addReply(annotation.uuid)">Add reply</button>
           </div>
         </div>
+        <div style="margin-top: 0.8rem;">
         <button
           class="c-pdf-annotated-card-delete"
           (click)="removeNode(annotation.uuid)"
@@ -205,6 +213,7 @@
         >
           Reply
         </button>
+      </div>
       </div>
     </div>
     <ng-template #noAnnotation><div>No annotations found...</div></ng-template>
