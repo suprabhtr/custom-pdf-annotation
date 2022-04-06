@@ -2,6 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 import { v4 as UUID } from 'uuid';
 import { AnnotationType } from '../annotationUtil';
+
+// interface IDocument{
+//   reviewStatus:{
+//     isReviewed: boolean,
+//     stamp: IAnnotation,
+//   }
+//   annotations: IAnnotation
+// }
 interface IAnnotation {
   uuid: string;
   pageNumber: string;
@@ -36,7 +44,7 @@ export class CPdfViewerComponent implements OnInit {
   blackColor = 'rgba(0,0,0,1)';
   pdfSrc = 'https://vadimdez.github.io/ng2-pdf-viewer/assets/pdf-test.pdf';
   enableFreSpaceText = false;
-  enableStamp = false;
+  reviewed: any = false;
   zoom = 0.75;
   color = 'rgba(255, 255, 0, 1)';
   date = 'Date';
@@ -57,6 +65,7 @@ export class CPdfViewerComponent implements OnInit {
     'December',
   ];
   replyText = '';
+  enableStamp: boolean = this.reviewed;
   constructor(private router: ActivatedRoute) {
     this.annotations = localStorage.getItem('annotations')!
       ? JSON.parse(localStorage.getItem('annotations')!)
@@ -67,6 +76,7 @@ export class CPdfViewerComponent implements OnInit {
     this.router.queryParams.subscribe((params: Params) => {
       this.pdfSrc = params['pdfURL'] || this.pdfSrc;
     });
+    this.isReviewed();
   }
 
   textLayerRendered(event: any) {
@@ -85,15 +95,24 @@ export class CPdfViewerComponent implements OnInit {
         return;
       }
 
-      if (annotation.metaData.type === 'Blank Space') {
+      if (annotation.metaData.type === 'Blank Space' || annotation.metaData.type === AnnotationType.stamp) {
         console.log(
           'Blank space annotation found of page ',
           annotation.pageNumber
         );
-        const button = this.createButtonForBlankSpace({
-          positionTop: annotation.offset?.startOffset,
-          positionLeft: annotation.offset?.endOffset,
-        });
+        let button;
+        if(annotation.metaData.type === 'Blank Space'){
+          button = this.createButtonForBlankSpace({
+            positionTop: annotation.offset?.startOffset,
+            positionLeft: annotation.offset?.endOffset,
+          });
+        }
+        else{
+          button = this.createStamp({
+            positionTop: annotation.offset?.startOffset,
+            positionLeft: annotation.offset?.endOffset,
+          });
+        }
         button.setAttribute('annotation-index', annotation.uuid);
         textLayer.append(button);
       } else {
@@ -394,6 +413,7 @@ export class CPdfViewerComponent implements OnInit {
     }
 
     this.annotations.splice(index, 1);
+    this.isReviewed();
   }
 
   replyBtn(annotationUUID: string) {
@@ -708,7 +728,7 @@ export class CPdfViewerComponent implements OnInit {
   }
   attachClickListenerOnThePage(textLayer: any, page: any) {
     textLayer.addEventListener('click', (event: any) => {
-      if (this.enableFreSpaceText || this.enableStamp) {
+      if (this.enableFreSpaceText || (this.enableStamp && !this.isReviewed())) {
         const uuid = UUID();
         let element, annotation;
 
@@ -746,6 +766,7 @@ export class CPdfViewerComponent implements OnInit {
               startOffset: event.layerY,
               endOffset: event.layerX,
             },
+            backgroundColor: 'rgb(100,149,237)',
             metaData: {
               type: 'Stamp',
               date: this.getDate(),
@@ -757,8 +778,13 @@ export class CPdfViewerComponent implements OnInit {
         element.setAttribute('annotation-index', uuid);
         textLayer.append(element);
         this.enableFreSpaceText = false;
+        this.enableStamp = false;
         this.annotations.push(annotation);
         this.scrollToTheBottomOfSiderbar();
+      }
+      else if(this.enableStamp && this.isReviewed()){
+        alert("Stamp already added");
+        this.enableStamp=false;
       }
     });
   }
@@ -816,11 +842,19 @@ export class CPdfViewerComponent implements OnInit {
 
   addStamp(){
     this.enableStamp = !this.enableStamp;
+    if(!this.reviewed){
+      this.enableStamp = true;
+    }
+    if (this.reviewed){
+      this.reviewed=false;
+      this.enableStamp = false;
+    }
+
   }
 
   createStamp(event: any) {
-    const button = document.createElement('div');
-    button.innerHTML = '<h1>Reviewed</h1><br>by '+this.username;
+    const button = document.createElement('button');
+    button.innerHTML = '<h1>Reviewed</h1><br> <h3>by '+this.username+' at '+this.getDate()+'</h3>';
     button.style.padding = '5px';
     button.style.position = 'absolute';
     button.style.top = `${event.positionTop}px`;
@@ -847,4 +881,28 @@ export class CPdfViewerComponent implements OnInit {
     });
     return button;
   }
+
+  isReviewed(){
+    if(this.annotations===undefined){
+      this.reviewed=false;
+      this.enableStamp=false;
+    }
+
+    let stamp: any;
+    this.annotations.forEach(element => {
+      if(element.metaData.type == AnnotationType.stamp){
+        stamp=element;
+        return;
+      }
+    });
+    if(stamp)
+      this.reviewed=true;
+    else{
+      this.reviewed=false;
+      this.enableStamp=false;
+    }
+    return stamp;
+  }
+
+
 }

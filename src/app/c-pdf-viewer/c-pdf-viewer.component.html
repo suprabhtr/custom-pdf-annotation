@@ -39,11 +39,10 @@
       Text
     </button>
     <button
-    class="c-pdf-highlight-btn annotate-btn"
+    class="c-pdf-highlight-btn stamp-btn"
     (click)="addStamp()"
-    [ngStyle]="{'background-color': enableStamp ? 'red' : 'cornflowerblue' }"
     >
-    {{ enableStamp ? "Disable Stamp" : "Enable Stamp" }}
+    {{ enableStamp ? "Add Stamp" : "Stamp" }}
     </button>
     <button
       class="c-pdf-highlight-btn blank-annotation-btn"
@@ -104,7 +103,7 @@
         <div>
           <span
             class="c-pdf-annotated-badge"
-            [ngClass]="getBadgeStyle(annotation.metaData.type)"
+            [ngStyle]="{'background-color': annotation.backgroundColor, 'color': 'white'}"
           >
             {{ annotation.metaData.type }}</span
           >
