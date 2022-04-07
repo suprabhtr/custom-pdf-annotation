@@ -744,6 +744,7 @@ export class CPdfViewerComponent implements OnInit {
             uuid,
             pageNumber: page.pageNumber.toString(),
             targetText: '',
+            backgroundColor: 'rgb(100,100,100)',
             offset: {
               startOffset: event.layerY,
               endOffset: event.layerX,
@@ -857,7 +858,7 @@ export class CPdfViewerComponent implements OnInit {
 
   createStamp(event: any) {
     const button = document.createElement('button');
-    button.innerHTML = '<h1>Reviewed</h1><br> <h3>by '+this.username+' at '+this.getDate()+'</h3>';
+    button.innerHTML = '<h2>Reviewed</h2> <h4>by '+this.username+' at '+this.getDate()+'</h4>';
     button.style.padding = '5px';
     button.style.position = 'absolute';
     button.style.top = `${event.positionTop}px`;

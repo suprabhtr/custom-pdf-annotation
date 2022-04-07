@@ -1,0 +1,19 @@
+<div class="preset-colors-box" >
+  <span
+    *ngFor="let color of presetColors"
+    class="preset-color"
+    [ngStyle]="{
+      'background-color' : color,
+      'border': selectedColor===color?'.15rem solid #696969':'0.15rem solid lightgray'
+    }"
+    (click)="onColorSelected(color)"
+  >
+    <span *ngIf="selectedColor===color" style="text-shadow: 0px 0px 3px #000">&#10004;</span>
+  </span>
+  <!-- <span
+    class="preset-color"
+    [ngStyle]="{'border': '.2rem solid grey', 'font-size': '2rem', 'text-align':'center'}"
+  >
+  +
+</span> -->
+</div>

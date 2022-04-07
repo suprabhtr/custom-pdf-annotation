@@ -11,8 +11,12 @@
   margin-left: 1%;
   border: 1px solid gray;
   border-radius: 6px;
-  height: 85vh;
   padding: 5px;
+
+}
+
+.annotations-panel{
+  height: 65vh;
   overflow: auto;
 }
 
@@ -168,5 +172,10 @@
 
 .stamp-btn{
   background-color: cornflowerblue;
+  color: white;
+}
+
+.delete-all-btn{
+  background-color: red;
   color: white;
 }

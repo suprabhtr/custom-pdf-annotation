@@ -1,0 +1,17 @@
+.preset-color{
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(189, 189, 218);
+  text-align: center;
+  color: white;
+}
+
+.preset-colors-box{
+  /* border: 1px solid blue; */
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  grid-gap: 5px;
+}

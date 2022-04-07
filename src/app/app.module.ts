@@ -7,9 +7,10 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { CPdfViewerComponent } from './c-pdf-viewer/c-pdf-viewer.component';
 import { CaptureUrlComponent } from './capture-url/capture-url.component';
+import { ColorPickerComponentComponent } from './color-picker-component/color-picker-component.component';
 
 @NgModule({
-  declarations: [AppComponent, CPdfViewerComponent, CaptureUrlComponent],
+  declarations: [AppComponent, CPdfViewerComponent, CaptureUrlComponent, ColorPickerComponentComponent],
   imports: [
     BrowserModule,
     AppRoutingModule,
