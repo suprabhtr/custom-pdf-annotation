@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 import { v4 as UUID } from 'uuid';
-import { AnnotationType } from '../annotationUtil';
+import { annotationStatus, AnnotationType } from '../annotationUtil';
+
 
 // interface IDocument{
 //   reviewStatus:{
@@ -21,6 +22,7 @@ interface IAnnotation {
     startOffset: number;
     endOffset: number;
   };
+  status?: string;
   metaData: {
     type: string;
     date: string;
@@ -66,6 +68,8 @@ export class CPdfViewerComponent implements OnInit {
   ];
   replyText = '';
   enableStamp: boolean = this.reviewed;
+  statusList = annotationStatus;
+
   constructor(private router: ActivatedRoute) {
     this.annotations = localStorage.getItem('annotations')!
       ? JSON.parse(localStorage.getItem('annotations')!)
@@ -633,7 +637,6 @@ export class CPdfViewerComponent implements OnInit {
   }
 
   scrollIntoView(pageNumber: string) {
-    console.log(pageNumber);
     const page = document.querySelector(`[data-page-number="${pageNumber}"]`)!;
     page.scrollIntoView({
       behavior: 'smooth',
@@ -903,6 +906,11 @@ export class CPdfViewerComponent implements OnInit {
     }
     return stamp;
   }
-
+  onStatusSelect(statusSelect:any, annotationUUID:any){
+    this.annotations.forEach(annotation=>{
+      if(annotation.uuid===annotationUUID)
+        annotation.status=statusSelect.target.value;
+    });
+  }
 
 }

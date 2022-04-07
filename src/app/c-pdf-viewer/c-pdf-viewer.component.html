@@ -100,7 +100,8 @@
           </div>
           <div>{{ annotation.metaData.date }}</div>
         </div>
-        <div>
+        <div style="display: flex; justify-content: space-between;">
+          <div>
           <span
             class="c-pdf-annotated-badge"
             [ngStyle]="{'background-color': annotation.backgroundColor, 'color': 'white'}"
@@ -111,6 +112,12 @@
             >Page No - {{ annotation.pageNumber }}</span
           >
         </div>
+          <select *ngIf="annotation.metaData.type!=='Stamp'" class="annotation-status-select" (change)="onStatusSelect($event,annotation.uuid)">
+            <option value="null" [selected]="annotation.status === null">Set Status</option>
+            <option *ngFor="let status of statusList" [value]="status" [selected]="annotation.status === status">{{status}}</option>
+          </select>
+        </div>
+
         <div *ngIf="annotation.targetText" class="c-pdf-annotated-card-body">
           <blockquote class="c-pdf-annotated-card-body-blockquote">
             <i>{{ annotation.targetText }}</i>

@@ -5,3 +5,10 @@ export enum AnnotationType {
   strikeThrough="Strikeout",
   stamp="Stamp"
 }
+
+export const annotationStatus = [
+  "Accepted",
+  "Completed",
+  "Cancelled",
+  "Rejected"
+]
