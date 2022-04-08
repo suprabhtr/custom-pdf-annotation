@@ -6,6 +6,16 @@
   grid-template-columns: 75fr 25fr;
   grid-gap: 10px;
 }
+.c-pdf-page-goto{
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.c-pdf-page-goto #goto-page-input{
+  padding: 5px;
+  width: 30px;
+  text-align: center;
+}
 
 .c-pdf-annotations-siderbar {
   margin-left: 1%;

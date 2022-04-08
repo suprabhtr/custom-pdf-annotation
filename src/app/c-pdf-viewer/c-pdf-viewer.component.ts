@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 import { v4 as UUID } from 'uuid';
 import { AnnotationType } from '../annotationUtil';
@@ -32,7 +32,7 @@ interface IAnnotation {
   templateUrl: './c-pdf-viewer.component.html',
   styleUrls: ['./c-pdf-viewer.component.css'],
 })
-export class CPdfViewerComponent implements OnInit {
+export class CPdfViewerComponent implements OnInit, AfterViewInit {
   blackColor = 'rgba(0,0,0,1)';
   pdfSrc = 'https://vadimdez.github.io/ng2-pdf-viewer/assets/pdf-test.pdf';
   enableFreSpaceText = false;
@@ -56,6 +56,8 @@ export class CPdfViewerComponent implements OnInit {
     'December',
   ];
   replyText = '';
+  currentPage = 1
+  lastPage = 0
   constructor(private router: ActivatedRoute) {
     this.annotations = localStorage.getItem('annotations')!
       ? JSON.parse(localStorage.getItem('annotations')!)
@@ -68,9 +70,14 @@ export class CPdfViewerComponent implements OnInit {
     });
   }
 
+  ngAfterViewInit(): void {
+    setTimeout(this.initializePage, 2000)
+  }
+
   textLayerRendered(event: any) {
     const textLayer = event.source.textLayerDiv;
     textLayer.style.opacity = 0.5;
+    textLayer.style.border = "1px solid";
     this.populateAnnotationsOnRenderedPage(
       event.pageNumber.toString(),
       textLayer
@@ -329,9 +336,12 @@ export class CPdfViewerComponent implements OnInit {
   }
 
   clearStorage() {
-    this.annotations = [];
-    localStorage.removeItem('annotations');
-    window.location.reload();
+    const confirm = window.confirm("Would you like to clear all the annotations ?")
+    if(confirm){
+      this.annotations = [];
+      localStorage.removeItem('annotations');
+      window.location.reload();
+    }
   }
 
   getDate() {
@@ -506,14 +516,12 @@ export class CPdfViewerComponent implements OnInit {
     let annotationType: string = '';
 
     if (type == 1) {
-      this.color = this.blackColor;
       annotationType = AnnotationType.underline;
       newNode.setAttribute(
         'style',
         `border-bottom: 0.2rem solid ${this.color} !important;`
       );
     } else if (type == 2) {
-      this.color = this.blackColor;
       annotationType = AnnotationType.strikeThrough;
       newNode.style.borderBottom = `0.2rem solid ${this.color}`;
       newNode.style.transform = 'translateY(-50%)';
@@ -714,6 +722,7 @@ export class CPdfViewerComponent implements OnInit {
           positionLeft: event.layerX,
         });
         button.setAttribute('annotation-index', uuid);
+        button.style.backgroundColor = this.color
         textLayer.append(button);
         this.enableFreSpaceText = false;
         const annotation: IAnnotation = {
@@ -786,5 +795,31 @@ export class CPdfViewerComponent implements OnInit {
       const scrollHeight = sidebar?.scrollHeight;
       sidebar?.scrollTo(0, scrollHeight);
     }, 0);
+  }
+  handleColorChangeAnnotation(event:any, annotation: IAnnotation){
+    annotation.backgroundColor = this.color
+    event.stopPropagation()
+    const page= document.querySelector(`[data-page-number='${annotation.pageNumber}']`)!
+    const list = page.querySelectorAll(`[annotation-index='${annotation.uuid}']`)
+    list.forEach((span:any) => {
+      if (
+        annotation.metaData.type === AnnotationType.highlight ||
+        annotation.metaData.type === AnnotationType.text
+      ) {
+        span.style.background = annotation.backgroundColor!;
+      } else if (
+        annotation.metaData.type === AnnotationType.underline
+      ) {
+        span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
+      } else {
+        span.style.borderBottom = `0.2rem solid ${annotation.backgroundColor}`;
+      }
+
+    })
+  }
+  initializePage = () => {
+    const pages = document.querySelectorAll("[data-page-number]")
+    this.currentPage = 1
+    this.lastPage = pages.length
   }
 }
